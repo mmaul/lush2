@@ -65,6 +65,16 @@
   (unlock-symbol varlushdir)
   (setq :varlushdir ())
   (when (and getpid (not wintl3p))
+    ;; but first see if we need to be quiet is required
+    (when argv
+      (let ((tmp-argv argv))
+	(while (and (consp tmp-argv) (= (str-left (car tmp-argv) 1) "-"))
+	  (when (let ((arg (car tmp-argv))) (= arg "-e"))
+	    (lush-is-quiet t))
+	  (setq tmp-argv (cdr tmp-argv)) )
+	(lush-is-quiet (or (lush-is-quiet) 
+			   (and (consp tmp-argv) (filep (car tmp-argv)))))
+	))
     ;; Check for .lush2 directory
     (let ((home (getenv "HOME")))
       (when (<> home "")
@@ -92,29 +102,29 @@
     (while (and (consp argv) (= (str-left (car argv) 1) "-"))
       (cond
        ;; Option -h for help
-       ((= (car argv) "-h")
-        (writing "$stderr"
-          (printf "Usage:\n")
-          (printf " 'lush2 [options]' for the interactive mode.\n")
-          (printf " 'lush2 [options] <lshfile> <...args...>' for script mode.\n")
-          (printf " 'lush2 [options] -e \"lush expression\"' for immediate eval.\n")
-          (exit 10) ) )
-       ;; Option -e for immediate execute
-       ((= (car argv) "-e") 
-        (let ((tmp (tmpname)))
-          (writing tmp 
-            (dolist (x (cdr argv))
-              (printf "%s " x) )
-            (printf "\n"))
-          (load tmp)
-          (unlink tmp)
-          (lush-is-quiet t)
-          (setq argv ()) ) )
-       ;; Unrecognized option
-       (t 
-        (writing "$stderr"
-          (printf "Warning: unrecognized option %s\n" (car argv)) 
-          (exit 10) ) ) )
+	((= (car argv) "-h")
+	 (writing "$stderr"
+	   (printf "Usage:\n")
+	   (printf " 'lush2 [options]' for the interactive mode.\n")
+	   (printf " 'lush2 [options] <lshfile> <...args...>' for script mode.\n")
+	   (printf " 'lush2 [options] -e \"lush expression\"' for immediate eval.\n")
+	   (exit 10) ) )
+	;; Option -e for immediate execute
+	((= (car argv) "-e") 
+	 (let ((tmp (tmpname)))
+	   (writing tmp 
+	     (dolist (x (cdr argv))
+	       (printf "%s " x) )
+	     (printf "\n"))
+	   (load tmp)
+	   (unlink tmp)
+	   (lush-is-quiet t)
+	   (setq argv ()) ) )
+	;; Unrecognized option
+	(t 
+	 (writing "$stderr"
+	   (printf "Warning: unrecognized option %s\n" (car argv)) 
+	   (exit 10) ) ) )
       (setq argv (cdr argv)) )
     ;; Process file arguments
     (when (consp argv)
@@ -126,8 +136,10 @@
       (setq argv ()) )
     ;; Exit with code 0 unless lush is interactive.
     (when (lush-is-quiet)
-      (exit 0) ) ) )
-
+      (exit 0)  
+      ) 
+    ) 
+  )
 ;; ------------------------------------------------------------
 ;; Setup paths for C include files and libraries
 

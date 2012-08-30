@@ -1076,9 +1076,9 @@
             (repeat libload.num-tabs
               (printf "   ") )
             (cond
-             ((null opt)    (printf " [%s]\n" (basename fname)))
-             ((stringp opt) (printf " [%s] %s\n" (basename fname) opt))
-             (t             (printf " [%s] %l\n" (basename fname) opt)) ))
+             ((null opt)    (when (not (lush-is-quiet)) (printf " [%s]\n" (basename fname))))
+             ((stringp opt) (when (not (lush-is-quiet))(printf " [%s] %s\n" (basename fname) opt)))
+             (t             (when (not (lush-is-quiet)) (printf " [%s] %l\n" (basename fname) opt))) ))
           
           (on-interrupt-macro `(progn
                                  (:libload.data ,rname ())
