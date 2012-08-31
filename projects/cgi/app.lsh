@@ -1,2 +1,0 @@
-(printf "Enter some text\n")
-(print ">" (read-string))
