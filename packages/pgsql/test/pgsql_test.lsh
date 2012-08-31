@@ -1,0 +1,57 @@
+(libload "pgsql")
+
+;;val connection_str_unix = "host=/tmp/.s.PGSQL.5432 dbname=multiple_sa user=appl password=xpOSrffs12"; */
+
+(with-namespace pgsql-
+
+(defvar connection-str  "host=localhost port=5432 dbname=multiple_sa user=appl password=xpOSrffs12")
+
+(defvar bad-connection-str  "host=localhost port=5432 dbname=bad_multiple_sa user=appl password=xpOSrffs12")
+
+;; Not sure if this is working
+(defun test-connectdb ()
+  (let ((db (pgsql-connectdb connection-str))) 
+    (assert (not (is-null db)))
+    (finish db)
+    "ok"))
+
+(defun test-reset ()
+  (let ((db (pgsql-connectdb connection-str))) 
+    (assert (not (is-null db)))
+    (reset db)
+    ;;(finish db)
+    "ok"))
+
+(defun test-status ()
+  (let ((db (pgsql-connectdb connection-str))) 
+    (assert (not (is-null db)))
+    (assert (= (status db) 0))
+    (finish db))
+  (let ((db (pgsql-connectdb bad-connection-str))) 
+    (assert (not (is-null db))) ;; OK 
+    (assert (= (status db) 1)) ;; CONNECTION_BAD
+    (finish db))
+    "ok")
+
+(defun test-exec ()
+  (let ((db (pgsql-connectdb connection-str))) 
+    (assert (not (is-null db)))
+    (assert (= (status db) 0))
+    (let ((result (exec db "SELECT * from contact")))
+      (assert (not (is-null result)))
+      (let ((rst (result-status result))) 
+	(assert (= rst 2)) ;; TUPLES_OK
+	(assert (= (exec-status-type rst) "PGRES_TUPLES_OK"))
+	(pgsql-clear result)	
+	))
+    (finish db)))
+
+(defun test-all ()
+  (test-connectdb)
+  (test-reset)
+  (test-status)
+  (test-exec)
+)
+)
+
+ 

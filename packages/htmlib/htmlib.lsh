@@ -1,0 +1,58 @@
+
+(in-namespace htmlib-
+#? (attributes <attribute alist>)
+;; Takes <attributes alist> and renders attributes sutiable for use in 
+;; HTML tag
+;; Todo: escape quotes
+(defmacro attributes (attrs) `(str-join "" (mapcar (lambda (kv)
+					    (let-filter (((k . v) kv)) 
+					      (str-cat " " k "='" v "' "))) ,attrs)))
+
+#? (tag <name> <value> <attribute alist>)
+;; Takes <attributes alist> and renders attributes sutiable for use in 
+;; HTML tag
+;; Todo: escape quotes
+(defun tag (name value &rest attr) (sprintf "<%s %s>%s</%s>" name 
+						(if (consp attr) (attributes (car attr)) "") 
+						value name))
+
+#? (template (<rep> <template>)
+;;Replaces occuance of keys in text contained in file <template> either
+;;referenced by file name or descriptor with the value you at the key 
+;;contained in alis <rep>
+;;Return subistitued text
+(defun template (rep template-file)
+  (let* ((html (str-join "" (read-lines template-file))))
+    (do ((kv rep))
+	(let-filter (((k . v) kv))
+	  (setq html (str-subst html k v))))
+    html))
+
+#? (table (<attrs> <header> <rows>)
+;;Construct html table element with <id> and <name> having
+;;attributes specified in <attrs> alist. TH elements are extracted
+;;from <header> which is list of header cell content. <rows>
+;; is a list of lists of row cell content
+(defun table (id name attrs header rows)
+  (str-cat "<table " (attributes attrs)
+	   "<thead><tr>" (str-join "" (mapcar (lambda (s)
+						(str-cat "<th>" s "</th>")) header))
+	   "</tr></thead>"
+	   "<tbody>"
+	   (str-join "" (mapcar (lambda (row) 
+				  (str-cat "<tr>" 
+					   (str-join "" (mapcar 
+							 (lambda (col)
+							   (str-cat "<td>" col "</td>")) 
+							 row)) "</tr>")) rows))
+	   "</table>"))
+
+
+#? (select <id> <name> <attributes> <options>)
+
+(defun select-option (id name options)
+  (str-cat "<select name='" name "' id='" id "'>"
+	   (str-join "" (mapcar (lambda (s) (str-cat "<option>" s "</option>")) options))
+	   "</select>"))
+
+)

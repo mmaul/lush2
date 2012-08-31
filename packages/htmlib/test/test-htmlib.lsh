@@ -1,0 +1,9 @@
+
+(libload "htmlib")
+(with-namespace htmllib-
+
+(defun test-table ()
+  (assert (= (tag "p" "Four score and seven ..."  (alist "id" "lincon1")))
+	  "<p  x='y' >Four score and seven ...</p>"))
+
+)
