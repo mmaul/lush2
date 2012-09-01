@@ -158,6 +158,8 @@ Current packages include:
 
 #? *** << opencv/opencv.hlp
 
+#? *** << pgsql/pgsql.hlp
+
 #? *** << sn28/sn28.hlp
 
 #? *** << audio/audio.hlp
@@ -170,6 +172,9 @@ Current packages include:
 
 #? *** << devices/devices.hlp
 
+#? *** << htmlib/README.md
+
+#? *** << htmlib/README.md
 
 #? **** Applications
 {<p>

@@ -1,17 +1,17 @@
-(libload "pgsql")
-
+(libload "pgsql/pgsql")
+(libload "testing/tools")
 ;;val connection_str_unix = "host=/tmp/.s.PGSQL.5432 dbname=multiple_sa user=appl password=xpOSrffs12"; */
 
 (with-namespace pgsql-
 
-(defvar connection-str  "host=localhost port=5432 dbname=multiple_sa user=appl password=xpOSrffs12")
+(defvar connection-str  "host=localhost port=5432 dbname=multiple_sa user=appl password=xxxxxx")
 
-(defvar bad-connection-str  "host=localhost port=5432 dbname=bad_multiple_sa user=appl password=xpOSrffs12")
+(defvar bad-connection-str  "host=localhost port=5432 dbname=bad_multiple_sa user=appl password=xxxxxxxxx")
 
 ;; Not sure if this is working
 (defun test-connectdb ()
   (let ((db (pgsql-connectdb connection-str))) 
-    (assert (not (is-null db)))
+    (test-pred (not (is-null db)) connectdb)
     (finish db)
     "ok"))
 
