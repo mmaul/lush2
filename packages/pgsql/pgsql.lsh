@@ -1,72 +1,128 @@
-
-
 #? *** Database binding for PostgreeSQL
-;; This is an interface to the Postgresql database package
+;; This is an lowlevel interface to the Postgresql database
 
-(defnamespace pgsql- '((PGsomething -int-)
-		       (ConnStatusType -int-)))
+(defnamespace pgsql- '((ConnStatusType -int-)))
 (libload "pgsql-config")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
 (in-namespace pgsql- 
-
-
-;;//----------------------------------- utility fns
-;;  fun isNull[t]: t -> bool = "(0==$1)";
-;;  proc hex_of[t]: t = """printf("(HEX:%x)",(unsigned int)$1);""";
-;;  const Null[t]:t = "NULL";
-;;//----------------------------------- types and data structures  
+#? ** types and data structures  
 ;; type pgconn = "PGconn";
 ;; type pgconn_ptr = "PGconn *";
 ;; type pgresult_ptr = "PGresult *";
-;; cenum ConnStatusType =
-;;	CONNECTION_OK,
-;;	CONNECTION_BAD,
-;;	/* Non-blocking mode only below here */
-;;	CONNECTION_STARTED,           /* Waiting for connection to be made.  */
-;;	CONNECTION_MADE,              /* Connection OK; waiting to send.	   */
-;;	CONNECTION_AWAITING_RESPONSE, /* Waiting for a response */
-;;	CONNECTION_AUTH_OK,           /* Received authentication; */
-;;	CONNECTION_SETENV,            /* Negotiating environment. */
-;;	CONNECTION_SSL_STARTUP,       /* Negotiating SSL. */
-;;	CONNECTION_NEEDED;             /* Internal state: connect() needed */
-;;  typedef conn_status_type = ConnStatusType;
 
-;;  cenum PostgresPollingStatusType =
-;;	PGRES_POLLING_FAILED,
-;;	PGRES_POLLING_READING,		/* These two indicate that one may	  */
-;;	PGRES_POLLING_WRITING,		/* use select before polling again.   */
-;;	PGRES_POLLING_OK,
-;;	PGRES_POLLING_ACTIVE;		/* unused; keep for awhile for backwards
-;;								 * compatibility */
-;;  typedef postgres_polling_status_type =  PostgresPollingStatusType;
+#? * ConnStatusType 
+#? (CONNECTION_OK)
+(defun CONNECTION_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_OK; #} ret))
+#? (CONNECTION_BAD)
+(defun CONNECTION_BAD () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_OK; #} ret))
+#? * Non-blocking mode only below here
+#? (CONNECTION_STARTED) 
+(defun CONNECTION_STARTED () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_STARTED; #} ret))
+#? (CONNECTION_MADE)
+(defun CONNECTION_MADE () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_MADE; #} ret))
+#? (CONNECTION_AWAITING_RESPONSE)
+(defun CONNECTION_AWAITING_RESPONSE () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_AWAITING_RESPONSE; #} ret))
+#? (CONNECTION_AUTH_OK)
+(defun CONNECTION_AUTH_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_AUTH_OK; #} ret))
+#? (CONNECTION_SETENV)
+(defun CONNECTION_SETENV () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_SETENV; #} ret))
+#? (CONNECTION_SSL_STARTUP)
+(defun CONNECTION_SSL_STARTUP () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_SSL_STARTUP; #} ret))
+#? (CONNECTION_NEEDED)
+(defun CONNECTION_NEEDED () (let ((ret 0)) (declare (-int-) ret )#{ $ret=CONNECTION_NEEDED; #} ret))
 
-  
-;;  cenum ExecStatusType =
-;;    PGRES_EMPTY_QUERY,        /* empty query string was executed */
-;;    PGRES_COMMAND_OK,         /* a query command that doesn't return
-;;                               * anything was executed properly by the backend */
-;;    PGRES_TUPLES_OK,          /* a query command that returns tuples was
-;;                               * executed properly by the backend, PGresult
-;;                               * contains the result tuples */
-;;    PGRES_COPY_OUT,           /* Copy Out data transfer in progress */
-;;    PGRES_COPY_IN,            /* Copy In data transfer in progress */
-;;    PGRES_BAD_RESPONSE,       /* an unexpected response was recv'd from the
-;;                               * backend */
-;;    PGRES_NONFATAL_ERROR,     /* notice or warning message */
-;;    PGRES_FATAL_ERROR,        /* query failed */
-;;    PGRES_COPY_BOTH;          /* Copy In/Out data transfer in progress */
+#? * PostgresPollingStatusType =
+#? (PGRES_POLLING_FAILED)
+(defun PGRES_POLLING_FAILED () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_POLLING_FAILED; #} ret))
+#? (PGRES_POLLING_READING)
+(defun PGRES_POLLING_READING () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_POLLING_READING; #} ret))
+#? (PGRES_POLLING_WRITING)
+(defun PGRES_POLLING_WRITING () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_POLLING_WRITING; #} ret))
+#? (PGRES_POLLING_OK)
+(defun PGRES_POLLING_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_POLLING_OK; #} ret))
+#? (PGRES_POLLING_ACTIVE)
+(defun PGRES_POLLING_ACTIVE () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_POLLING_ACTIVE; #} ret))
+#? (PGRES_EMPTY_QUERY)
+;;/* empty query string was executed */
+(defun PGRES_EMPTY_QUERY () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_EMPTY_QUERY; #} ret))
+#? (PGRES_COMMAND_OK)
+;;/* a query command that doesn't return  anything was executed properly by the backend */
+(defun PGRES_COMMAND_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COMMAND_OK; #} ret))
+#? (PGRES_TUPLES_OK)
+;; /* a query command that returns tuples was 
+;;  * executed properly by the backend, PGresult
+;;  * contains the result tuples */
+(defun PGRES_TUPLES_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_TUPLES_OK; #} ret))
+#? (PGRES_COPY_OUT) 
+;;/* Copy Out data transfer in progress */
+(defun PGRES_COPY_OUT () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_OUT; #} ret))
+#? (PGRES_COPY_IN)
+;;/* Copy In data transfer in progress */
+(defun PGRES_COPY_IN () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_IN; #} ret))
+#? (PGRES_BAD_RESPONSE)
+;;/* an unexpected response was recv'd from the * backend */
+(defun PGRES_BAD_RESPONSE () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_BAD_RESPONSE; #} ret))
+#? (PGRES_NONFATAL_ERROR
+;;/* notice or warning message */ 
+(defun PGRES_NONFATAL_ERROR () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_NONFATAL_ERROR; #} ret))    
+#? PGRES_FATAL_ERROR
+;; /* query failed */ 
+(defun PGRES_FATAL_ERROR  () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_FATAL_ERROR; #} ret))
+#? (PGRES_COPY_BOTH)
+;;/* Copy In/Out data transfer in progress */       
+(defun PGRES_COPY_BOTH  () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_BOTH; #} ret))
+    
+#? * ExecStatusType
+#? (PGRES_EMPTY_QUERY)
+;;/* empty query string was executed */
+(defun PGRES_EMPTY_QUERY () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_EMPTY_QUERY; #} ret))
+#? (PGRES_COMMAND_OK)
+;;/* a query command that doesn't return  anything was executed properly by the backend */
+(defun PGRES_COMMAND_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COMMAND_OK; #} ret))
+#? (PGRES_TUPLES_OK)
+;;/* a query command that returns tuples was executed properly by the backend, PGresult      
+;;contains the result tuples */
+(defun PGRES_TUPLES_OK () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_TUPLES_OK; #} ret))
+#? (PGRES_COPY_OUT)
+;;/* Copy Out data transfer in progress */
+(defun PGRES_COPY_OUT () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_OUT; #} ret))
+#? (PGRES_COPY_IN)
+;;/* Copy In data transfer in progress */
+(defun PGRES_COPY_IN () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_IN; #} ret))
+#? (PGRES_BAD_RESPONSE)
+;;/* an unexpected response was recv'd from the backend */
+(defun PGRES_BAD_RESPONSE () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_BAD_RESPONSE; #} ret))       
+#? (PGRES_NONFATAL_ERROR)
+;;/* notice or warning message */                               
+(defun PGRES_NONFATAL_ERROR () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_NONFATAL_ERROR; #} ret))
+#? (PGRES_FATAL_ERROR) 
+;;/* query failed */
+(defun PGRES_FATAL_ERROR () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_FATAL_ERROR; #} ret))
+#? (PGRES_COPY_BOTH)
+;;/* Copy In/Out data transfer in progress */
+(defun PGRES_COPY_BOTH () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PGRES_COPY_BOTH; #} ret))
   
 ;;  typedef exec_status_type =  ExecStatusType;
 
 ;;  cenum PGTransactionStatusType =
-;;    PQTRANS_IDLE,    /* connection idle */
-;;    PQTRANS_ACTIVE,  /* command in progress */
-;;    PQTRANS_INTRANS, /* idle, within transaction block */
-;;    PQTRANS_INERROR, /* idle, within failed transaction */
-;;    PQTRANS_UNKNOWN; /* cannot determine status */
+#? (PQTRANS_IDLE)
+;;/* connection idle */
+(defun PQTRANS_IDLE    () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PQTRANS_IDLE; #} ret))
+#? (PQTRANS_ACTIVE)
+;;/* command in progress */
+(defun PQTRANS_ACTIVE  () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PQTRANS_ACTIVE; #} ret))
+#? (PQTRANS_INTRANS)
+;;/* idle, within transaction block */
+(defun PQTRANS_INTRANS () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PQTRANS_INTRANS; #} ret))
+#? (PQTRANS_INERROR)
+;;/* idle, within failed transaction */
+(defun PQTRANS_INERROR () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PQTRANS_INERROR; #} ret))
+#? (PQTRANS_UNKNOWN)
+;;/* cannot determine status */
+(defun PQTRANS_UNKNOWN () (let ((ret 0)) (declare (-int-) ret )#{ $ret=PQTRANS_UNKNOWN; #} ret))
 
 ;;  typedef pg_transaction_status_type =  PGTransactionStatusType;
+
 (defun is-null (p)
   (declare (-gptr-) p)
   (to-bool #{ ($p == 0) #}))
@@ -236,12 +292,23 @@
 ;;    operating systems.
 ;;"""
 ;;   gen pq_ntuples: pgresult_ptr->int = "PQntuples($1)";
-;;           
+(defun ntuples (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQntuples($pgresult); #}
+    ret))
 
 ;;  publish """PQnfields pgresult_ptr
 ;;    Returns the number of columns (fields) in each row of the query result.
 ;;"""
 ;;  gen pq_nfields: pgresult_ptr->int = "PQnfields($1)";
+(defun nfields (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQnfields($pgresult); #}
+    ret))
            
 
 ;;  publish """PQfname pgresult_ptr col_num:int
@@ -250,31 +317,56 @@
 ;;    when the associated PGresult handle is passed to PQclear.
 ;;"""
 ;;  gen pq_fname: pgresult_ptr*int->string = "std::string(PQfname($1,$2))";
+(defun fname (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret=PQfname($pgresult,$col); #}
+    ret))
 
 ;;publish """PQfnumber pgresult_ptr col_name:string
 ;;  Returns the column number associated with the given column name.
 ;;    -1 is returned if the given name does not match any column.
 ;;"""
 ;;   gen pq_fnumber: pgresult_ptr*string->int = "PQfnumber($1,(const char *)$2.c_str())";
+(defun fnumber (pgresult colname)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-str-) colname)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQfnumber($pgresult,$colname); #}
+    ret))
 
 
 ;;publish """           
 ;;    Returns the OID of the table from which the given column was fetched. Column numbers start at 0.
-
 ;;            Oid PQftable(const PGresult *res,
 ;;                         int column_number);
-           
-
-;;    InvalidOid is returned if the column number is out of range, or if the specified column is not a simple reference to a table column, or when using pre-3.0 protocol. You can query the system table pg_class to determine exactly which table is referenced.
-
-;;    The type Oid and the constant InvalidOid will be defined when you include the libpq header file. They will both be some integer type.
-;;PQftablecol
-
+;;    InvalidOid is returned if the column number is out of range, or if the specified column is not a simple reference to a table 
+;;    column, or when using pre-3.0 protocol. You can query the system table pg_class to determine exactly which table is referenced.
+;;    The type Oid and the constant InvalidOid will be defined when you include the libpq header file. They will both be some 
+;;    integer type.
+(defun ftable (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret) ;; Really no unit type
+    #{ $ret=PQftable($pgresult,$col); #}
+    ret))        
+   
+;;    PQftablecol
 ;;    Returns the column number (within its table) of the column making up the specified query result column. Query-result column numbers start at 0, but table columns have nonzero numbers.
 
 ;;           int PQftablecol(const PGresult *res,
 ;;                           int column_number);
-           
+(defun ftablecol (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQftablecol($pgresult,$col); #}
+    ret))           
 
 ;;    Zero is returned if the column number is out of range, or if the specified column is not a simple reference to a table column, or when using pre-3.0 protocol.
 ;;PQfformat
@@ -283,100 +375,151 @@
 
 ;;            int PQfformat(const PGresult *res,
 ;;                          int column_number);
+(defun fformat (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQfformat($pgresult,$col); #}
+    ret))
            
 
 ;;    Format code zero indicates textual data representation, while format code one indicates binary representation. (Other codes are reserved for future definition.)
+
 ;;PQftype
-
 ;;    Returns the data type associated with the given column number. The integer returned is the internal OID number of the type. Column numbers start at 0.
-
 ;;            Oid PQftype(const PGresult *res,
 ;;                        int column_number);
+;;    You can query the system table pg_type to obtain the names and properties of the various data types. The OIDs of the built-in data types are defined in the file src/include/catalog/pg_type.h in the source tree.
+
+(defun ftype (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret) ;; Really no unit type
+    #{ $ret=PQftype($pgresult,$col); #}
+    ret))        
            
 
-;;    You can query the system table pg_type to obtain the names and properties of the various data types. The OIDs of the built-in data types are defined in the file src/include/catalog/pg_type.h in the source tree.
 ;;PQfmod
-
 ;;    Returns the type modifier of the column associated with the given column number. Column numbers start at 0.
-
 ;;            int PQfmod(const PGresult *res,
 ;;                       int column_number);
+;;    The interpretation of modifier values is type-specific; they typically indicate precision or size limits. The value -1 is used to indicate "no information available". Most data types do not use modifiers, in which case the value is always -1.
+(defun fmod (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQfmod($pgresult,$col); #}
+    ret))        
            
 
-;;    The interpretation of modifier values is type-specific; they typically indicate precision or size limits. The value -1 is used to indicate "no information available". Most data types do not use modifiers, in which case the value is always -1.
+
 ;;PQfsize
-
 ;;    Returns the size in bytes of the column associated with the given column number. Column numbers start at 0.
-
 ;;            int PQfsize(const PGresult *res,
 ;;                        int column_number);
-           
-
 ;;    PQfsize returns the space allocated for this column in a database row, in other words the size of the server's internal representation of the data type. (Accordingly, it is not really very useful to clients.) A negative value indicates the data type is variable-length.
-;;PQbinaryTuples
-
-;;    Returns 1 if the PGresult contains binary data and 0 if it contains text data.
-
-;;            int PQbinaryTuples(const PGresult *res);
+(defun fsize (pgresult col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQfsize($pgresult,$col); #}
+    ret))        
            
 
-;;    This function is deprecated (except for its use in connection with COPY), because it is possible for a single PGresult to contain text data in some columns and binary data in others. PQfformat is preferred. PQbinaryTuples returns 1 only if all columns of the result are binary (format 1).
+
+;;PQbinaryTuples
+;;    Returns 1 if the PGresult contains binary data and 0 if it contains text data.
+;;            int PQbinaryTuples(const PGresult *res);
+;;    This function is deprecated (except for its use in connection with COPY), because it is possible for a 
+;;    single PGresult to contain text data in some columns and binary data in others. PQfformat is preferred. 
+;;    PQbinaryTuples returns 1 only if all columns of the result are binary (format 1).
 ;;"""
+(defun binaryTuples (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQbinaryTuples($pgresult); #}
+    ret))        
 
 ;;publish """PQgetvalue pgresult_ptr*row_number:int*column_number:int->string
 ;;    Returns a single field value of one row of a PGresult. Row and column numbers start 
 ;;    at 0. The caller should not free the result directly. It will be freed when the 
 ;;    associated PGresult handle is passed to PQclear.
-
 ;;    For data in text format, the value returned by PQgetvalue is a null-terminated 
 ;;    character string representation of the field value. For data in binary format, 
 ;;    the value is in the binary representation
-
 ;;    An empty string is returned if the field value is null. See PQgetisnull to 
 ;;    distinguish null values from empty-string values.
 ;;"""
 ;;  gen pq_getvalue: pgresult_ptr*int*int->string = "std::string(PQgetvalue($1,$2,$3))";
+(defun getvalue (pgresult row col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (declare (-int-) row)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret=PQgetvalue($pgresult,$row,$col); #}
+    ret))   
 
 ;;  publish """ PQgetisnull
-
 ;;    Tests a field for a null value. Row and column numbers start at 0.
-
 ;;            int PQgetisnull(const PGresult *res,
 ;;                            int row_number,
 ;;                            int column_number);
-           
-
 ;;    This function returns 1 if the field is null and 0 if it contains a non-null value. (Note that PQgetvalue will return an empty string, not a null pointer, for a null field.)
 ;;PQgetlength
+(defun getisnull (pgresult row col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (declare (-int-) row)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQgetisnull($pgresult,$row,$col); #}
+    ret))   
 
 ;;    Returns the actual length of a field value in bytes. Row and column numbers start at 0.
-
 ;;            int PQgetlength(const PGresult *res,
 ;;                            int row_number,
 ;;                            int column_number);
-           
-
 ;;    This is the actual data length for the particular data value, that is, the size of the object pointed to by PQgetvalue. For text data format this is the same as strlen(). For binary format this is essential information. Note that one should not rely on PQfsize to obtain the actual data length.
+(defun getlength (pgresult row col)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) col)
+  (declare (-int-) row)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQgetlength($pgresult,$row,$col); #}
+    ret))   
+           
 ;;PQnparams
-
 ;;    Returns the number of parameters of a prepared statement.
-
 ;;            int PQnparams(const PGresult *res);
-           
-
 ;;    This function is only useful when inspecting the result of PQdescribePrepared. For other types of queries it will return zero.
+(defun nparams (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQnparams($pgresult); #}
+    ret))   
+
 ;;PQparamtype
-
 ;;    Returns the data type of the indicated statement parameter. Parameter numbers start at 0.
-
 ;;            Oid PQparamtype(const PGresult *res, int param_number);
-           
-
 ;;    This function is only useful when inspecting the result of PQdescribePrepared. For other types of queries it will return zero.
+(defun paramtype (pgresult param_number)
+  (declare (-gptr- "PGresult *") pgresult)
+  (declare (-int-) param_number)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQparamtype($pgresult,$param_number); #}
+    ret))   
+ 
 ;;PQprint
-
 ;;    Prints out all the rows and, optionally, the column names to the specified output stream.
-
 ;;    void PQprint(FILE *fout,      /* output stream */
 ;;                 const PGresult *res,
 ;;                 const PQprintOpt *po);
@@ -392,8 +535,6 @@
 ;;      char    *caption;    /* HTML table caption */
 ;;      char    **fieldName; /* null-terminated array of replacement field names */
 ;;    } PQprintOpt;
-           
-
 ;;    This function was formerly used by psql to print query results, but this is no longer the case. Note that it assumes all the data is in text format.
 
 ;;30.3.3. Retrieving Result Information for Other Commands
@@ -401,114 +542,138 @@
 ;;These functions are used to extract information from PGresult objects that are not SELECT results.
 
 ;;PQcmdStatus
-
 ;;    Returns the command status tag from the SQL command that generated the PGresult.
-
 ;;            char *PQcmdStatus(PGresult *res);
-           
-
 ;;    Commonly this is just the name of the command, but it might include additional data such as the number of rows processed. The caller should not free the result directly. It will be freed when the associated PGresult handle is passed to PQclear.
+(defun cmdStatus (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret=PQcmdStatus($pgresult); #}
+    ret))   
+
 ;;PQcmdTuples
-
 ;;    Returns the number of rows affected by the SQL command.
-
 ;;            char *PQcmdTuples(PGresult *res);
-           
-
 ;;    This function returns a string containing the number of rows affected by the SQL statement that generated the PGresult. This function can only be used following the execution of an INSERT, UPDATE, DELETE, MOVE, FETCH, or COPY statement, or an EXECUTE of a prepared query that contains an INSERT, UPDATE, or DELETE statement. If the command that generated the PGresult was anything else, PQcmdTuples returns an empty string. The caller should not free the return value directly. It will be freed when the associated PGresult handle is passed to PQclear.
+(defun cmdTuples (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret=PQcmdTuples($pgresult); #}
+    ret))   
+
+
 ;;PQoidValue
-
 ;;    Returns the OID of the inserted row, if the SQL command was an INSERT that inserted exactly one row into a table that has OIDs, or a EXECUTE of a prepared query containing a suitable INSERT statement. Otherwise, this function returns InvalidOid. This function will also return InvalidOid if the table affected by the INSERT statement does not contain OIDs.
-
 ;;            Oid PQoidValue(const PGresult *res);
+(defun oidValue (pgresult)
+  (declare (-gptr- "PGresult *") pgresult)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret=PQoidValue($pgresult); #}
+    ret))   
            
 
 ;;PQoidStatus
-
 ;;    Returns a string with the OID of the inserted row, if the SQL command was an INSERT that inserted exactly one row, or a EXECUTE of a prepared statement consisting of a suitable INSERT. (The string will be 0 if the INSERT did not insert exactly one row, or if the target table does not have OIDs.) If the command was not an INSERT, returns an empty string.
-
 ;;            char *PQoidStatus(const PGresult *res);
-           
-
 ;;    This function is deprecated in favor of PQoidValue. It is not thread-safe.
 
-;;30.3.4. Escaping Strings for Inclusion in SQL Commands
-
+#? ** 30.3.4. Escaping Strings for Inclusion in SQL Commands
+#? (escapeStringConn pgconn from)
 ;;PQescapeStringConn escapes a string for use within an SQL command. This is useful when inserting data values as literal constants in SQL commands. Certain characters (such as quotes and backslashes) must be escaped to prevent them from being interpreted specially by the SQL parser. PQescapeStringConn performs this operation.
-
 ;;    Tip: It is especially important to do proper escaping when handling strings that were received from an untrustworthy source. Otherwise there is a security risk: you are vulnerable to "SQL injection" attacks wherein unwanted SQL commands are fed to your database.
-
 ;;Note that it is not necessary nor correct to do escaping when a data value is passed as a separate parameter in PQexecParams or its sibling routines.
-
 ;;     size_t PQescapeStringConn (PGconn *conn,
 ;;                                char *to, const char *from, size_t length,
 ;;                                int *error);
 ;;    
-
 ;;PQescapeStringConn writes an escaped version of the from string to the to buffer, escaping special characters so that they cannot cause any harm, and adding a terminating zero byte. The single quotes that must surround PostgreSQL string literals are not included in the result string; they should be provided in the SQL command that the result is inserted into. The parameter from points to the first character of the string that is to be escaped, and the length parameter gives the number of bytes in this string. A terminating zero byte is not required, and should not be counted in length. (If a terminating zero byte is found before length bytes are processed, PQescapeStringConn stops at the zero; the behavior is thus rather like strncpy.) to shall point to a buffer that is able to hold at least one more byte than twice the value of length, otherwise the behavior is undefined. Behavior is likewise undefined if the to and from strings overlap.
-
 ;;If the error parameter is not NULL, then *error is set to zero on success, nonzero on error. Presently the only possible error conditions involve invalid multibyte encoding in the source string. The output string is still generated on error, but it can be expected that the server will reject it as malformed. On error, a suitable message is stored in the conn object, whether or not error is NULL.
-
 ;;PQescapeStringConn returns the number of bytes written to to, not including the terminating zero byte.
+(defun escapeStringConn (pgconn from)
+  (declare (-gptr- "PGconn *") pgconn)
+  (declare (-str-) from)
+  (let ((ret 0)
+	(to "")
+	(err 0)
+	(len (length from))
+	)
+    (declare (-int-) ret)
+    (declare (-str-) to)
+    (declare (-int-) err)
+    (declare (-int-) len)
+    #{ $to = (char *) malloc(sizeof(char)*strlen($from)*3); 
+       $ret=PQescapeStringConn($pgconn,$to,$from,$len,&$err); #}
+    (list ret to err)))   
 
 ;;     size_t PQescapeString (char *to, const char *from, size_t length);
-    
-
 ;;PQescapeString is an older, deprecated version of PQescapeStringConn; the difference is that it does not take conn or error parameters. Because of this, it cannot adjust its behavior depending on the connection properties (such as character encoding) and therefore it might give the wrong results. Also, it has no way to report error conditions.
-
 ;;PQescapeString can be used safely in single-threaded client programs that work with only one PostgreSQL connection at a time (in this case it can find out what it needs to know "behind the scenes"). In other contexts it is a security hazard and should be avoided in favor of PQescapeStringConn.
-;;30.3.5. Escaping Binary Strings for Inclusion in SQL Commands
+;; escapeStringConn returns a list containig the followng elements (<length> <escaped string> <error code>)
+
+#? *30.3.5. Escaping Binary Strings for Inclusion in SQL Commands
 
 ;;PQescapeByteaConn
-
 ;;    Escapes binary data for use within an SQL command with the type bytea. As with PQescapeStringConn, this is only used when inserting data directly into an SQL command string.
 
 ;;            unsigned char *PQescapeByteaConn(PGconn *conn,
 ;;                                             const unsigned char *from,
 ;;                                             size_t from_length,
 ;;                                             size_t *to_length);
-           
-
 ;;    Certain byte values must be escaped (but all byte values can be escaped) when used as part of a bytea literal in an SQL statement. In general, to escape a byte, it is converted into the three digit octal number equal to the octet value, and preceded by usually two backslashes. The single quote (') and backslash (\) characters have special alternative escape sequences. See Section 8.4 for more information. PQescapeByteaConn performs this operation, escaping only the minimally required bytes.
-
 ;;    The from parameter points to the first byte of the string that is to be escaped, and the from_length parameter gives the number of bytes in this binary string. (A terminating zero byte is neither necessary nor counted.) The to_length parameter points to a variable that will hold the resultant escaped string length. This result string length includes the terminating zero byte of the result.
-
 ;;    PQescapeByteaConn returns an escaped version of the from parameter binary string in memory allocated with malloc(). This memory must be freed using PQfreemem() when the result is no longer needed. The return string has all special characters replaced so that they can be properly processed by the PostgreSQL string literal parser, and the bytea input function. A terminating zero byte is also added. The single quotes that must surround PostgreSQL string literals are not part of the result string.
-
 ;;    On error, a NULL pointer is returned, and a suitable error message is stored in the conn object. Currently, the only possible error is insufficient memory for the result string.
+;; returns list of result string and length
+(defun escapeByteaConn (pgconn from)
+  (declare (-gptr- "PGconn *") pgconn)
+  (declare (-str-) from)
+  (let ((ret "")
+	(len (length from))
+	(to 0)
+	)
+    (declare (-str-) ret)
+    (declare (-int-) len)
+    (declare (-int-) to)
+    #{ $ret=(char *)PQescapeByteaConn($pgconn,(const unsigned char *)$from,(size_t)$len,(size_t *)&$to); #}
+    (list ret to)))   
+
+#? unescapeBytea <from>)
 ;;PQescapeBytea
-
 ;;    PQescapeBytea is an older, deprecated version of PQescapeByteaConn.
-
 ;;            unsigned char *PQescapeBytea(const unsigned char *from,
 ;;                                         size_t from_length,
 ;;                                         size_t *to_length);
-           
-
 ;;    The only difference from PQescapeByteaConn is that PQescapeBytea does not take a PGconn parameter. Because of this, it cannot adjust its behavior depending on the connection properties (in particular, whether standard-conforming strings are enabled) and therefore it might give the wrong results. Also, it has no way to return an error message on failure.
-
 ;;    PQescapeBytea can be used safely in single-threaded client programs that work with only one PostgreSQL connection at a time (in this case it can find out what it needs to know "behind the scenes"). In other contexts it is a security hazard and should be avoided in favor of PQescapeByteaConn.
+
 ;;PQunescapeBytea
-
 ;;    Converts a string representation of binary data into binary data — the reverse of PQescapeBytea. This is needed when retrieving bytea data in text format, but not when retrieving it in binary format.
-
 ;;            unsigned char *PQunescapeBytea(const unsigned char *from, size_t *to_length);
-           
-
 ;;    The from parameter points to a string such as might be returned by PQgetvalue when applied to a bytea column. PQunescapeBytea converts this string representation into its binary representation. It returns a pointer to a buffer allocated with malloc(), or null on error, and puts the size of the buffer in to_length. The result must be freed using PQfreemem when it is no longer needed.
-
 ;;    This conversion is not exactly the inverse of PQescapeBytea, because the string is not expected to be "escaped" when received from PQgetvalue. In particular this means there is no need for string quoting considerations, and so no need for a PGconn parameter.
+(defun unescapeBytea (from)
+  (declare (-str-) from)
+  (let ((ret "")
+	(to 0)
+	)
+    (declare (-str-) ret)
+    (declare (-int-) to)
+    #{ $ret=(char *)PQunescapeBytea((const unsigned char *)$from,(size_t *)&$to); #}
+    (list ret to)))   
+
+#? (freemen ptr)
 ;;PQfreemem
-
 ;;    Frees memory allocated by libpq.
-
 ;;            void PQfreemem(void *ptr);
-           
-
 ;;    Frees memory allocated by libpq, particularly PQescapeByteaConn, PQescapeBytea, PQunescapeBytea, and PQnotifies. It is particularly important that this function, rather than free(), be used on Microsoft Windows. This is because allocating memory in a DLL and releasing it in the application works only if multithreaded/single-threaded, release/debug, and static/dynamic flags are the same for the DLL and the application. On non-Microsoft Windows platforms, this function is the same as the standard library function free().
-
-;;""";
-
+(defun freemem (mem)
+  (declare (-gptr- "void *") mem)
+  #{ PQfreemem($mem); #}
+  t
+)
 
 ;;}
 ;;(eval `(de headers () ,pgsql-libpq-fe-h ()))
@@ -539,5 +704,56 @@
 		    pgsql-exec-status-type
 		    pgsql-result-error-message
 		    pgsql-clear
+		    pgsql-ntuples
+		    pgsql-nfields
+		    pgsql-fname
+		    pgsql-fnumber
+		    pgsql-ftablecol
+		    pgsql-fformat
+		    pgsql-ftable
+		    pgsql-ftype
+		    pgsql-fmod
+		    pgsql-fsize
+		    pgsql-binaryTuples
+		    pgsql-getvalue
+		    pgsql-getisnull
+		    pgsql-getlength
+		    pgsql-nparams
+		    pgsql-paramtype
+		    pgsql-cmdStatus
+		    pgsql-cmdTuples
+		    pgsql-oidValue
+		    pgsql-CONNECTION_OK
+		    pgsql-CONNECTION_BAD
+		    pgsql-CONNECTION_STARTED
+		    pgsql-CONNECTION_MADE
+		    pgsql-CONNECTION_AWAITING_RESPONSE
+		    pgsql-CONNECTION_AUTH_OK
+		    pgsql-CONNECTION_SETENV
+		    pgsql-CONNECTION_SSL_STARTUP
+		    pgsql-CONNECTION_NEEDED
+		    pgsql-PGRES_POLLING_FAILED
+		    pgsql-PGRES_POLLING_READING
+		    pgsql-PGRES_POLLING_WRITING
+		    pgsql-PGRES_POLLING_OK
+		    pgsql-PGRES_POLLING_ACTIVE
+		    pgsql-PGRES_EMPTY_QUERY
+		    pgsql-PGRES_COMMAND_OK
+		    pgsql-PGRES_TUPLES_OK
+		    pgsql-PGRES_COPY_OUT 
+		    pgsql-PGRES_COPY_IN
+		    pgsql-PGRES_BAD_RESPONSE
+		    pgsql-PGRES_NONFATAL_ERROR
+		    pgsql-PGRES_FATAL_ERROR 
+		    pgsql-PGRES_COPY_BOTH
+		    pgsql-PQTRANS_IDLE
+		    pgsql-PQTRANS_ACTIVE
+		    pgsql-PQTRANS_INTRANS
+		    pgsql-PQTRANS_INERROR
+		    pgsql-PQTRANS_UNKNOWN
+		    pgsql-escapeStringConn
+		    pgsql-escapeByteaConn
+		    pgsql-unescapeBytea
+		    pgsql-freemem
 )
  
