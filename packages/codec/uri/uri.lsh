@@ -1,0 +1,93 @@
+#? *** URI Encoder/Decoder
+(defnamespace uri- '())
+
+(in-namespace uri-
+;; (char2hex <char val>)
+;; return hex string of <char val>
+;; equiv. to (str-mid (strhex (asc c)) 2)
+(defun char2hex (c)
+  (declare (-ubyte-) c)
+  (let ((dig1 (bitshr (bitand c 0xF0) 4))
+	(dig2 (bitand c 0x0F)))
+    (declare (-ubyte-) dig1)
+    (declare (-ubyte-) dig2)
+  (str-cat 
+   (chr (cond 
+    ((and (<= 0 dig1)  (<= dig1 9)) (+ dig1 48)) 
+    ((and (<= 10 dig1)  (<= dig1 15)) (+ dig1 87))
+    (t 0)))
+  (chr (cond
+    ((and (<= 0 dig2)  (<= dig1 2)) (+ dig2 48))
+    ((and (<= 10 dig2)  (<= dig2 15)) (+ dig2 87))
+    (t 0))))))
+
+#? (encode <s>)
+;; Returns url encoding of <s>
+;; Example (encode "this is a test! ()~*!'")
+;; = "this%20is%20a%20test%21%20%28%29%7e%2:%21%27" 
+(defun encode (s)
+  (declare (-str-) s)
+  (let ((escaped "")
+	(max (str-len s))
+	(i 0))
+    (declare (-str-) escaped) (declare (-int-) max) (declare (-int-) i)
+    (while (< i max)
+      (if (or (and (<= 48 (s i)) (<= (s i) 57))   ;;0-9
+           (and (<= 65 (s i)) (<= (s i)  90))     ;;abc...xyz
+           (and (<= 97 (s i)) (<= (s i) 122))     ;;ABC...XYZ
+           (= ("~" 0) (s i))  (= (s i) ("!" 0))  (= (s i) ("*" 0))  (= (s i) ("(" 0))  
+	   (= (s i) (")" 0)) (= (s i) ("'" 0)))
+        (setq escaped (str-cat escaped (chr (s i))))
+	(setq escaped (str-cat escaped "%"
+			       (char2hex (s i)) ))
+	) (incr i))
+    escaped))
+
+(defun strtoul (s)
+  (declare (-str-) s)
+  (let ((num 0))
+    (declare (-int-) num)
+    #{ $num = (int) strtoul ($s,NULL,0);#}
+    num))
+
+(defun isxdigit (c) 
+  (declare (-ubyte-) c)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret = isxdigit((int)$c); #}
+    ret))
+
+
+#? (decode <encoded>)
+;; Decodes url encoded string
+;; Example (decode (urlencode "this is a test!"))
+;; = "this is a test!"
+(defun decode (encoded)
+  (declare (-str-) encoded)
+  (let ((state 'SEARCH)
+	(decoded "")
+	(i 0))
+    (while (< i (- (str-len encoded) 1))
+	 (cond
+	   ((= state 'SEARCH) (if (<> (encoded i) ("%" 0))
+				  (setq decoded (str-cat decoded 
+							 (if (= (encoded i) ("+" 0)) 
+							     " " 
+							     (chr (encoded i)))))
+				  (setq state 'CONVERT)))
+	   ((= state 'CONVERT) 
+	       (let ((temp (substring encoded i (+ i 2)));
+		     (both t)) 
+		 (for (j 0 1)
+		      (when (not (isxdigit (temp j)))
+			  (setq both ())))
+		 (when both 
+		     (setq decoded (str-cat decoded (chr (strtoul (str-cat "0x" temp)))))
+		     (incr i))
+		 (setq state 'SEARCH))))
+	 (incr i))
+    decoded))
+
+
+(dhc-make () uri-strtoul uri-isxdigit uri-char2hex uri-encode)
+)

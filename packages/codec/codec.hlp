@@ -1,0 +1,4 @@
+#? **** codec: Encoding/Decoding Libraries
+
+#? *** << codec/base64/base64.lsh
+#? *** << codec/uri/uri.lsh

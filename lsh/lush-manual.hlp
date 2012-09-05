@@ -160,6 +160,8 @@ Current packages include:
 
 #? *** << pgsql/pgsql.hlp
 
+#? *** << codec/codec.hlp
+
 #? *** << sn28/sn28.hlp
 
 #? *** << audio/audio.hlp
