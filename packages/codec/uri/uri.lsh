@@ -17,7 +17,7 @@
     ((and (<= 10 dig1)  (<= dig1 15)) (+ dig1 87))
     (t 0)))
   (chr (cond
-    ((and (<= 0 dig2)  (<= dig1 2)) (+ dig2 48))
+    ((and (<= 0 dig2)  (<= dig2 2)) (+ dig2 48))
     ((and (<= 10 dig2)  (<= dig2 15)) (+ dig2 87))
     (t 0))))))
 
@@ -39,7 +39,7 @@
 	   (= (s i) (")" 0)) (= (s i) ("'" 0)))
         (setq escaped (str-cat escaped (chr (s i))))
 	(setq escaped (str-cat escaped "%"
-			       (char2hex (s i)) ))
+			       (char2hex (s i))) )
 	) (incr i))
     escaped))
 
@@ -67,7 +67,7 @@
   (let ((state 'SEARCH)
 	(decoded "")
 	(i 0))
-    (while (< i (- (str-len encoded) 1))
+    (while (< i (- (str-len encoded) 0))
 	 (cond
 	   ((= state 'SEARCH) (if (<> (encoded i) ("%" 0))
 				  (setq decoded (str-cat decoded 
@@ -82,8 +82,8 @@
 		      (when (not (isxdigit (temp j)))
 			  (setq both ())))
 		 (when both 
-		     (setq decoded (str-cat decoded (chr (strtoul (str-cat "0x" temp)))))
-		     (incr i))
+		   (setq decoded (str-cat decoded (chr (strtoul (str-cat "0x" temp)))))
+		   (incr i))
 		 (setq state 'SEARCH))))
 	 (incr i))
     decoded))
