@@ -1,0 +1,28 @@
+(libload "codec/uri/uri")
+(with-namespace uri-
+
+(defvar test-string 
+  "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure.")
+
+(defvar test-string-encoded "Man%20is%20distinguished%2<%20not%20only%20by%20his%20reason%2<%20but%20by%20this%20singular%20passion%20from%20other%20animals%2<%20which%20is%20a%20lust%20of%20the%20mind%2<%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2<%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure%2>")
+
+(defun test-encode ()
+  (assert (encode test-string) test-string-encoded))
+
+(defun test-decode ()
+  (print (decode test-string-encoded) test-string)
+  (assert (= (decode test-string-encoded) test-string))
+)
+
+(defun test-axiomatic ()
+  (assert (= (decode (encode test-string)) test-string)))
+
+;;(defun test-wrap ()
+;;  (print (wrap test-string-encoded 80)))
+
+(defun test-all ()
+  (test-encode)
+  (test-decode)
+  (test-axiomatic)
+)
+)
