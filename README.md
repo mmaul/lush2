@@ -1,4 +1,15 @@
 ------------------------------------------------------------------------
+(incr LUSH2): The Lisp Universal SHell, version 2.x enhanced
+------------------------------------------------------------------------
+(incr LUSH2) is a fork of LUSH2 intended to 
+add features and capabilities to the LUSH2. Goals include enhancements to 
+syntax, the compiler and libraries. Current extensions include a CGI 
+packages, a bindng for the PostgreSQL database. Planned enhancements are 
+the implementation of green threads and a ZeroMQ binding for use as an 
+IPC and thead message bus. Other enhancements include a native HTTP client
+to enhace data acquisition capabilities and JSON parser. 
+
+------------------------------------------------------------------------
 LUSH2: The Lisp Universal SHell, version 2.x
 ------------------------------------------------------------------------
 
