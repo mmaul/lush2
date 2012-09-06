@@ -1,0 +1,36 @@
+(libload "codec/csv/csv")
+
+(with-namespace csv-
+
+
+(defun test-get-csv ()
+  (let ((s "1.204,Hello,Hello world,\"string with a ,\",0"))
+    (let* ((l1 (get-csv-value s 0))
+	   (l2 (get-csv-value s (nth 1 l1)))
+	   (l3 (get-csv-value s (nth 1 l2)))
+	   (l4 (get-csv-value s (nth 1 l3)))
+	   (l5 (get-csv-value s (nth 1 l4)))
+	   )
+      (assert (= l1 '("1.204" 6)))
+      (assert (= l2 '("Hello" 12)))
+      (assert (= l3 '("Hello world" 24)))
+      (assert (= l4 '("string with a ," 42)))
+      (assert (= l5 '("0" 43)))
+      )))
+
+(defun test-decode ()
+   (let ((s "1.204,Hello,Hello world,\"string \nwith a ,\",0,\" quoted\"\"quote\",Hi"))
+     (assert (decode s) '("1.204" "Hello" "Hello world" "string \nwith a ," "0" " quoted\"quote" "Hi")))
+   t)
+
+(defun test-decode-tsv ()
+   (let ((s "1.204\tHello\tHello world,\"string \nwith a \t\"\t0\t\" quoted\"\"quote\"\tHi"))
+     (assert (= (decode s "\t") '("1.204" "Hello" "Hello world,string \nwith a \t" "0" " quoted\"quote" "Hi"))))
+   t)
+
+(defun test-all ()
+  (test-get-csv)
+  (test-decode)
+  (test-decode-tsv)
+)
+)

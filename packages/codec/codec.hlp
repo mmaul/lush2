@@ -2,3 +2,4 @@
 
 #? *** << codec/base64/base64.lsh
 #? *** << codec/uri/uri.lsh
+#? *** << codec/csv/csv.lsh

@@ -1,0 +1,65 @@
+#? *** CSV codec
+;; This module should "mostly" support RFC 4180 
+;; It supportes quoted CR|CRLR as long as the line reader passes then entire
+;; string to decode
+ 
+(defnamespace csv- '())
+(libload "datatypes/stack")
+(in-namespace csv-
+;;(defconstant skip-st 1)
+(defconstant collect-st 2)
+(defconstant quote-st 3)
+(defconstant complete-st 4)
+(defvar quote-lit (asc "\""))
+(defvar backslash-lit (asc "\\"))
+
+
+(defun get-csv-value (s o &optional osep)
+  (let ((r "");
+	(n (length s))
+	(state  collect-st)
+	(i o)
+	(lst 0)
+	(sep (asc (if osep osep ","))))
+    (while (and (<> complete-st state) (< i n))
+      (let ((ch (s i))) 
+	(cond
+	  ((= ch quote-lit) (if  (= lst quote-lit)
+				 (progn 
+				   (setq r (str-cat r (chr ch)))
+				   (setq state quote-st))
+				 (if (= state quote-st)
+				     (setq state collect-st)
+				     (setq state quote-st))
+				 ))
+	  ((= ch sep) (if (= state quote-st) 
+				(setq r (str-cat r (chr ch)))
+				(setq state complete-st)))
+	  ;;((= ch backslash-lit) (if (= state skip-st) 
+	  ;;			    (progn 
+	  ;;		              (setq r (str-cat r "\\\\"))
+	  ;;   	                      (setq state collect-st))
+	  ;;                          (setq state skip-st)))
+	  (t (setq r (str-cat r (chr ch)))))
+	(incr i)
+	(setq lst ch)))
+    (when (= "" r) (setq r ()))
+    (list r i)))
+)
+
+#? (decode <s> &optional <seperator>)
+;; Returns a list of values given a CSV string
+;; If the optional argument <seperator> is supplied the <seporator> is used 
+;; otherwise the sepororator is the tab character
+(defun decode (s  &optional osep)
+  (let ((o 0)
+	(ret ())
+	(fin ())
+	(sep  (if osep osep ","))
+	)
+    (while (not fin)
+      (let-filter (((v p) (get-csv-value s o sep)))
+	(if v (setq ret (cons v ret)) (setq fin t))
+	(setq o p)))
+    (reverse ret)))
+
