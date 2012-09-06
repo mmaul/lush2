@@ -4,7 +4,6 @@
 ;; string to decode
  
 (defnamespace csv- '())
-(libload "datatypes/stack")
 (in-namespace csv-
 ;;(defconstant skip-st 1)
 (defconstant collect-st 2)
@@ -13,8 +12,15 @@
 (defvar quote-lit (asc "\""))
 (defvar backslash-lit (asc "\\"))
 
-
-(defun get-csv-value (s o &optional osep)
+#? (get-csv-value (<s> <o> &optional <osep> <trim>)
+;; Given a string <s> containing a line of CSV text and
+;; <o> a offset returns a list containing the next column of data and the 
+;; string position after the last seperator encountered.
+;; If the optional argument <seperator> is supplied the <seporator> is used 
+;; otherwise the sepororator is the tab character
+;; if <trim> is not nill leading and trailing whitespace
+;; is removed from the  coloumn
+(defun get-csv-value (s o &optional osep trim)
   (let ((r "");
 	(n (length s))
 	(state  collect-st)
@@ -45,21 +51,43 @@
 	(setq lst ch)))
     (when (= "" r) (setq r ()))
     (list r i)))
-)
 
-#? (decode <s> &optional <seperator>)
+
+#? (decode <s> &optional <seperator> <trim>)
 ;; Returns a list of values given a CSV string
 ;; If the optional argument <seperator> is supplied the <seporator> is used 
 ;; otherwise the sepororator is the tab character
-(defun decode (s  &optional osep)
+;; if <trim> is not nill leading and trailing whitespace
+;; is removed from the  coloumn
+(defun decode (s  &optional osep trim)
   (let ((o 0)
 	(ret ())
 	(fin ())
 	(sep  (if osep osep ","))
+	(trim  (if trim trim ","))
 	)
     (while (not fin)
-      (let-filter (((v p) (get-csv-value s o sep)))
+      (let-filter (((v p) (get-csv-value s o sep trim)))
 	(if v (setq ret (cons v ret)) (setq fin t))
 	(setq o p)))
     (reverse ret)))
 
+#? (encode (<csv-list> &optional <sep>)
+;; Encodes list of numeric and strings into a CSV encoded string
+;; Optional argument <sep> specifies specific field seperator default is ","  
+(defun encode (csv-list &optional sep)
+  (let ((sep (if sep sep ","))) 
+    (str-join sep (mapcar (lambda (st) (let* ((s (if (stringp st) st (str st)))
+					      (f (str-find "\"" s))
+					     (sp (if f (str-insert s f "\"") s))) (if (str-find sep sp)  (str-cat "\"" sp "\"") sp)))
+				   csv-list))))
+
+;;(defun encode1 (csv-list &optional sep)
+;; (let* ((sep (if sep sep ","))
+;;	(ln (length csv-list))
+;;	(i (+ ln 1)))
+;;    (reduce< (lambda (c s) (progn (decr i) (str-cat (let* ((f (str-find "\"" s))
+;;							   (sp (if f (str-insert s f "\"") s))) (if (str-find sep sp)  (str-cat "\"" sp "\"") sp)) 
+;;						    (if (<> i ln) sep "") c))) "" csv-list))) 
+
+)

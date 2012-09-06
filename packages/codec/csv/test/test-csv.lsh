@@ -28,9 +28,15 @@
      (assert (= (decode s "\t") '("1.204" "Hello" "Hello world,string \nwith a \t" "0" " quoted\"quote" "Hi"))))
    t)
 
+(defun test-encode ()
+  (let ((l (list "hello" "world" 1.20932 10 0x2f)))
+    (assert (= '("hello" "world" "1.2093" "10" "47") (decode (encode l)))))
+  t)
+
 (defun test-all ()
   (test-get-csv)
   (test-decode)
   (test-decode-tsv)
+  (test-encode)
 )
 )
