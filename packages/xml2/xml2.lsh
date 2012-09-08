@@ -1,0 +1,454 @@
+(defnamespace xml2 '())
+
+
+
+(in-namespace xml2-
+(libload "xml2_config")
+
+;;//----------------------------------- utility fns
+;;  fun isNull[t]: t -> bool = "(0==$1)";
+#? (is-null <p>)
+;; Tests pointer for NULL value
+(defun is-null (p)
+  (declare (-gptr-) p)
+  (to-bool #{ ($p == 0) #}))
+
+(defun xml-parse-file (file)
+  (declare (-str-) file)
+  (let ((xmldocptr (to-gptr ())))
+    (declare (-gptr-) xmldocptr)
+    #{ $xmldocptr = xmlParseFile($file); #}
+    xmldocptr))
+
+(defun xml-parse-string (s)
+  (declare (-str-) s)
+  (let ((xdoc (to-gptr ()))
+	(l (length s)))
+    (declare (-gptr-) xdoc)
+    (declare (-int-) l)
+    #{ $xdoc = xmlParseMemory($s,$l); #}
+    xdoc))
+
+(defun html-parse-file (file enc)
+  (declare (-str-) file)
+  (declare (-str-) enc)
+  (let ((xmldocptr (to-gptr ())))
+    (declare (-gptr-) xmldocptr)
+    #{ $xmldocptr = htmlParseFile($file,$enc); #}
+    xmldocptr))
+
+(defun html-parse-string (s)
+    (declare (-str-) s)
+  (let ((xmldocptr (to-gptr ())))
+    (declare (-gptr-) xmldocptr)
+    #{ $xmldocptr = htmlParseDoc((xmlChar *) $s,NULL); #}
+    xmldocptr))
+
+
+
+;;cenum xmlParserOption = 
+(defconstant    XML_PARSE_RECOVER 1) ;;  : recover on errors
+(defconstant    XML_PARSE_NOENT 2) ;;  : substitute entities
+(defconstant    XML_PARSE_DTDLOAD 4) ;;  : load the external subset
+(defconstant    XML_PARSE_DTDATTR 8) ;;  : default DTD attributes
+(defconstant    XML_PARSE_DTDVALID 16) ;;  : validate with the DTD
+(defconstant    XML_PARSE_NOERROR 32) ;; : suppress error reports
+(defconstant    XML_PARSE_NOWARNING 64) ;; : suppress warning reports
+(defconstant    XML_PARSE_PEDANTIC 128) ;; : pedantic error reporting
+(defconstant    XML_PARSE_NOBLANKS 256) ;; : remove blank nodes
+(defconstant    XML_PARSE_SAX1 512) ;; : use the SAX1 interface internally
+(defconstant    XML_PARSE_XINCLUDE 1024) ;; : Implement XInclude substitition
+(defconstant    XML_PARSE_NONET 2048) ;; : Forbid network access
+(defconstant    XML_PARSE_NODICT 4096) ;; : Do not reuse the context dictionnary
+(defconstant    XML_PARSE_NSCLEAN 8192) ;; : remove redundant namespaces declarations
+(defconstant    XML_PARSE_NOCDATA 16384) ;; : merge CDATA as text nodes
+(defconstant    XML_PARSE_NOXINCNODE 32768) ;; : do not generate XINCLUDE START/END nodes
+(defconstant    XML_PARSE_COMPACT 65536) ;; : compact small text nodes; no modification of the tree allowed afterwards (will possibly crash if you try to modify the tree)
+(defconstant    XML_PARSE_OLD10 131072) ;; : parse using XML-1.0 before update 5 
+(defconstant   XML_PARSE_NOBASEFIX 262144) ;; : do not fixup XINCLUDE xml:base uris
+(defconstant    XML_PARSE_HUGE 524288) ;; : relax any hardcoded limit from the parser
+(defconstant    XML_PARSE_OLDSAX 1048576) ;; : parse using SAX2 interface from before 2.7.0
+
+;;  typedef xml_parser_option = xmlParserOption;
+;;  publish "parses string document fragment in context of supplied node xml_parse_errors"
+(defun xml-parse-in-node-context (ctxxmlnodeptr s parseropt xmlnodeptr)
+  (declare (-gptr- "xmlNodePtr") ctxxmlnodeptr)
+  (declare (-str-) s)
+  (declare (-int-) parseropt)
+  (declare (-gptr- "xmlNodePtr") xmlnodeptr)
+  (let ((ret 0)
+	(l (length s)))
+    (declare (-int-) ret)
+    (declare (-int-) l)
+    #{ $ret = (int)xmlParseInNodeContext($ctxxmlnodeptr,$s,$l,$parseropt,& $xmlnodeptr);#}
+    ret))
+  
+;;//------------------------------------ tree definitions
+;;  
+;;  type xml_ns_ptr   = "xmlNsPtr";
+;;  type void_ptr     = "void *";
+;;  type xml_dtd_ptr  = "xmlDtdPtr";
+;;  type xml_element_type = "xmlElementType";
+(defclass xmlNode object
+  ((-gptr- "xmlNodePtr") xmlNodePtr))
+
+(defmethod xmlNode xmlNode () 
+  (setq xmlNodePtr NULL)
+)
+
+;  cstruct xmlNode {
+;     _private:void_ptr;	    //application data
+;    type:xml_element_type;  // XML_ATTRIBUTE_DECL, must be second !
+;    name:xml_char_ptr;      // Attribute name
+;    children:xml_node_ptr;  // NULL
+;    last:xml_node_ptr;      // NULL
+;    parent:xml_dtd_ptr;	    // -> DTD
+;    next:xml_node_ptr;      // next sibling link
+;    prev:xml_node_ptr;      // previous sibling link
+;    doc:xml_doc_ptr;        // the containing document
+;    ns:xml_ns_ptr;          // pointer to the associated namespace
+;    content:xml_char_ptr;   // the content
+;    properties:xml_attr_ptr;// properties list
+;    nsDef:xml_ns_ptr;       // namespace definitions on this node
+;    psvi:void_ptr;          // for type/PSVI informations
+;    line:ushort;            // line number
+;    extra:ushort;           // extra data for XPath/XSLT
+;  };
+;;(defsetter xmlNode set-type type (-int-) (-gptr- "xmlNodePtr") (to-gptr ()) 0 ) 
+;;(defgetter xmlNode get-type type (-int-) (-gptr- "xmlNodePtr") (to-gptr ()) 0 ) 
+;(defsetter xmlNode set-name name (-str-) (-str-) (to-gptr ()) "" ) 
+;(defgetter xmlNode get-name name (-str-) (-str-) (to-gptr ()) "" ) 
+
+(defun xml-doc-dump (FILE doc)
+  (declare (-gptr- "FILE*") FILE) (declare (-gptr- "xmlDocPtr") doc)
+  (let ((ret 0))
+    (declare (-int-) ret)
+    #{ $ret = xmlDocDump($FILE,$doc); #}
+    ret))
+(defun xml-free-node (nodeptr)
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  #{ xmlFreeNode($nodeptr); #}
+  t)
+
+(defun xml-free-node-list (nodeptr)
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  #{ xmlFreeNodeList($nodeptr); #}
+  t)
+
+;Dump an XML document in memory and return the #xmlChar * and it's size in bytes. It's up to the caller to free the memory with xml_free(). The resulting byte array is zero terminated, though the last 0 is not included in the returned size.
+;cur:	the document
+;mem:	OUT: the memory pointer
+;size:	OUT: the memory length
+;"""
+(defun xml-doc-dump-memory (docptr)
+  (declare (-gptr- "xmlDocPtr") docptr) 
+  (let ((s "")
+	(sz 0))
+    (declare (-str-) s) (declare (-int-) sz)
+    #{ xmlChar *t_tcmp = NULL; 
+    xmlDocDumpMemory($docptr,(xmlChar **) & t_tcmp,& $sz);
+    $s = (char *) malloc(sizeof(char)*$sz+4);
+    strcpy($s,(char *)t_tcmp);
+    xmlFree(t_tcmp);
+    #}
+    s))
+
+(defun xml-new-doc (doc)
+  (declare (-str-) doc)
+  (let ((docptr (to-gptr ())))
+    #{ $docptr = xmlNewDoc((const xmlChar *) $doc); #}
+    docptr))
+
+(defun xml-new-dtd (docptr s1 s2 s3) ;: xml_doc_ptr*string*string*string->xml_dtd_ptr = 
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (declare (-str-) s1)(declare (-str-) s2)(declare (-str-) s3)
+  (let ((dtdptr (to-gptr ())))
+    #{ $dtdptr = xmlNewDtd($docptr,(const xmlChar *)$s1,(const xmlChar *)$s2, (const xmlChar *)$s3); #}
+    dtdptr
+))
+
+(defun xml-create-int-subset (docptr s1 s2 s3) 
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (declare (-str-) s1)(declare (-str-) s2)(declare (-str-) s3)
+  (let ((dtdptr (to-gptr ())))
+    #{ $dtdptr = xmlCreateIntSubset($docptr,(const xmlChar *)$s1,(const xmlChar *)$s2,(const xmlChar *)$s3); #}
+    dtdptr))
+
+(defun xml-new-html-dtd (docptr) ;: xml_doc_ptr->xml_dtd_ptr = 
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (let ((dtdptr (to-gptr ())))
+    #{ $dtdptr = xmlNewDtd($docptr,(const xmlChar *)"HTML",NULL,NULL); #}
+    dtdptr))
+
+(defun xml-parse-local-dtd (s)
+  (declare (-str-) s)
+    (let ((dtdptr (to-gptr ())))
+      #{ $dtdptr = xmlParseDTD(NULL,(const xmlChar *)$s); #}
+      dtdptr))
+
+(defun xml-parse-external-dtd(s)
+  (declare (-str-) s)
+  (let ((dtdptr (to-gptr ())))
+      #{ $dtdptr = xmlParseDTD((const xmlChar *)$s,NULL); #}
+    dtdptr))
+
+;  publish " xml"
+(defun xml-new-node-ns (nsptr s)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlNewNode($nsptr,(const xmlChar *)($s)); #} 
+    nodeptr))
+
+(defun xml-new-node (s)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    #{ $nodeptr = xmlNewNode(NULL,(const xmlChar *)($s)) #}
+    nodeptr))
+  
+(defun xml-new-ns (nodeptr s1 s2)
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  (declare (-str-) s1) (declare (-str-) s2)
+  (let ((ns (to-gptr ())))
+    (declare (-gptr- "xmlNsPtr") ns)
+    #{ $ns = xmlNewNs($nodeptr,(const xmlChar *)$s1,(const xmlChar *)$s2); #}
+    ns))
+
+(defun xml-new-text (s)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlNewText((const xmlChar *)$s); #}
+    nodeptr))
+
+(defun xml-add-child (nodeptr1 nodeptr2)
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNodePtr") nodeptr2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlAddChildList($nodeptr1,$nodeptr2); #}
+    nodeptr))
+
+;  publish "parent:xml_node_ptr,namespace:xml_ns_ptr,name:string,content:string";
+(defun xml-new-child (nodeptr1 nsptr s1 s2)
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlNewChild($nodeptr1,$nsptr,(const xmlChar *)($s1),(const xmlChar *)($s2)); #}
+    nodeptr))
+
+;  publish "parent:xml_node_ptr,namespace:xml_ns_ptr,name:string,content:string";
+(defun xml-new-text-child (nodeptr1 nsptr s1 s2)
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlNewTextChild($nodeptr1,$nsptr,(const xmlChar *)($s1),(const xmlChar *)($s2)); #}
+    nodeptr))
+
+(defun xml-doc-get-root-element (docptr)
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlDocGetRootElement($docptr); #}
+    nodeptr))
+
+(defun xml-doc-set-root-element (docptr nodeptr)
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  #{xmlDocSetRootElement($docptr,$nodeptr); #}
+t)
+
+(defun xml-new-cdata-block (docptr s1)
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (declare (-str-) s1)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlNewCDataBlock($docptr,(const xmlChar *)$s1,strlen($s1)); #}
+    nodeptr))
+
+(defun xml-node-get-content (nodeptr) ; xml_node_ptr->xml_char_ptr 
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  (let ((s ""))
+    (declare (-str-) s)
+    #{ $s = (char *)xmlNodeGetContent($nodeptr); #}
+    s))
+
+
+(defun xml-node-set-content (nodeptr s) ; xml_node_ptr*xml_char_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  (declare (-str-) s)
+  #{ xmlNodeSetContent($nodeptr,(const xmlChar *) $s); #}
+  s)
+
+(defun xml-add-next-sibling (nodeptr1 nodeptr2) ; xml_node_ptr*xml_node_ptr->xml_node_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNodePtr") nodeptr2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlAddNextSibling($nodeptr1,$nodeptr2); #}
+    nodeptr))
+
+(defun xml-add-prev-sibling (nodeptr1 nodeptr2); xml_node_ptr*xml_node_ptr->xml_node_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNodePtr") nodeptr2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlAddPrevSibling($nodeptr1,$nodeptr2); #}
+    nodeptr))
+
+
+(defun xml-add-sibling (nodeptr1 nodeptr2) ; xml_node_ptr*xml_node_ptr->xml_node_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNodePtr") nodeptr2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlAddSibling($nodeptr1,$nodeptr2); #}
+    nodeptr))
+
+
+;  header """ 
+;  std::string xml_encode_special_chars_helper(const xmlChar *input) {
+;    xmlDocPtr doc = xmlNewDoc((const xmlChar *)"");
+;    xmlChar *enc =  xmlEncodeSpecialChars(doc,input);
+;    std::string ret = std::string((const char *)enc);
+;    xmlFree(enc);
+;    xmlFreeDoc(doc);
+;    return ret;
+;  }
+;  """;
+;
+(defun xml-encode-special-chars (docptr s1); string->string
+  (declare (-gptr- "xmlDocPtr") docptr)
+  (declare (-str-) s1)
+  (let ((s ""))
+    (declare (-str-) s)
+    #{ $s = (char *) xmlEncodeSpecialChars($docptr,(const xmlChar *)$s1); #}
+    s))
+
+(defun xml-replace-node (nodeptr1 nodeptr2) ; xml_node_ptr*xml_node_ptr->xml_node_ptr 
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-gptr- "xmlNodePtr") nodeptr2)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlReplaceNode($nodeptr1,$nodeptr2); #}
+    nodeptr))
+
+;  publish "replaces old node with new node and destroys old node"
+;  proc xml_replace_node_p (old:xml_node_ptr,cur:xml_node_ptr) {
+;    val o = xml_replace_node(old,cur);
+;    if not isNull[xml_node_ptr](o) do xml_free_node(o); done
+;  }
+ 
+(defun xml-set-prop (nodeptr1 s1 s2) ; xml_node_ptr*xml_char_ptr*xml_char_ptr->xml_attr_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  #{ xmlSetProp($nodeptr1,(xmlChar *)$s1,(xmlChar *)$s2); #}
+  t)
+
+
+;  gen xml_set_prop (node:xml_node_ptr,name:string,value:string):xml_attr_ptr = {
+;    return xml_set_prop(node,xml_char_ptr_of_char_ptr(cstr(name)),xml_char_ptr_of_char_ptr(cstr(value)));
+;  }
+
+(defun xml-get-prop (nodeptr1 s1) ; xml_node_ptr * xml_char_ptr -> xml_char_ptr 
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-str-) s1)
+  (let ((s ""))
+    (declare (-str-) s)
+    #{ $s = (char *)xmlGetProp($nodeptr1,(xmlChar *)$s1); #}
+    s))
+
+proc xml_free_doc: xml_doc_ptr = "xmlFreeDoc($1);";
+
+;/*Function: xmlCopyNode
+;Do a copy of the node.
+;node:	the node
+;extended:	if 1 do a recursive copy (properties, namespaces and children when applicable) if 2 copy properties and namespaces (when applicable)
+;Returns:	a new #xmlNodePtr, or NULL in case of error.
+;*/
+(defun  xml-copy-node (nodeptr1 i1) ; xml_node_ptr*int->xml_node_ptr
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (declare (-int-) i1)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlCopyNode($nodeptr1,$i1); #}
+    nodeptr))
+
+;/*
+;Function: xmlCopyNodeList
+;*/
+
+(defun xml-copy-node-list (nodeptr1) ; xml_node_ptr->xml_node_ptr 
+  (declare (-gptr- "xmlNodePtr") nodeptr1)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlCopyNodeList($nodeptr1) #}
+    nodeptr))
+
+ (defun xml-free-doc (doc) ; xml_doc_ptr  
+   (declare (-gptr- "xmlDocPtr") doc)
+   #{ xmlFreeDoc($doc); #}
+   t
+   )
+
+)
+
+(de headers ()
+  (cpheader "#include <libxml2/libxml/parser.h>")
+  (cpheader "#include <libxml2/libxml/HTMLparser.h>")
+  (cpheader "#include <libxml2/libxml/tree.h>")
+  (cpheader "#include <libxml2/libxml/uri.h>")
+  t)
+
+(dhc-make-with-libs () 
+                    (list xml2-libxml2)
+		    headers
+		    (xml2-xmlNode xml2-xmlNode)
+		    xml2-xml-parse-file
+		    xml2-xml-parse-string
+		    xml2-html-parse-file
+		    xml2-xml-parse-in-node-context
+		    xml2-html-parse-string
+		    xml2-xml-doc-dump
+		    xml2-xml-free-node
+		    xml2-xml-free-node-list
+		    xml2-xml-doc-dump-memory 
+		    xml2-xml-new-doc
+		    xml2-xml-new-dtd
+		    xml2-xml-create-int-subset
+		    xml2-xml-new-html-dtd
+		    xml2-xml-parse-local-dtd
+		    xml2-xml-parse-external-dtd
+		    xml2-xml-new-node
+		    xml2-xml-new-node-ns
+		    xml2-xml-new-ns
+		    xml2-xml-new-text
+		    xml2-xml-add-child
+		    xml2-xml-new-child
+		    xml2-xml-new-text-child
+		    xml2-xml-doc-get-root-element
+		    xml2-xml-doc-set-root-element
+		    xml2-xml-new-cdata-block
+		    xml2-xml-node-get-content
+		    xml2-xml-node-set-content
+		    xml2-xml-add-next-sibling 
+		    xml2-xml-add-prev-sibling 
+		    xml2-xml-add-sibling
+		    xml2-xml-encode-special-chars
+		    xml2-xml-replace-node
+		    xml2-xml-get-prop
+		    xml2-xml-set-prop
+		    xml2-xml-copy-node
+		    xml2-xml-copy-node-list
+		    xml2-xml-free-doc
+)
+
+

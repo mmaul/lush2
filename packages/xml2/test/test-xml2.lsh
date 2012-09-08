@@ -1,0 +1,25 @@
+(libload "packages/xml2/xml2")
+(with-namespace xml2-
+(defvar testdir   (str-cat lushdir "/packages/xml2/test"))
+(defvar in_doc1 (str-cat testdir "/test1.xhtml"));
+
+(defun test-xml1 ()
+  (let ((xml_doc1 (xml-parse-file in_doc1))
+	(out_doc1 (str-cat testdir "/test_out1.xhtml")));; // parse file
+	(printf "----------Test xml2-1-0-----------------\n");
+	(printf "---xml_parse_file xml_doc_dump----------\n");
+  	(printf "----------------------------------------\n");
+					;/* Use this if you want to write to a file
+	
+	(let (( doc-txt (xml-doc-dump-memory xml_doc1)))
+	  (print doc-txt))
+;	 (let ((result1 (xml-doc-dump out_doc1 xml_doc1)))
+;	   if (> result1 0) 
+;	   (printf (str-cat "Wrote: " out_doc1 " length:" (str (length result1)) "\n"));
+;	   (printf (str-cat "Failed writing:" out_doc1 " With:" (str (length result1)) "\n"));
+
+;	   (print (xml-doc-dump xml_doc1));
+;	   (printf "----------------------------------------\n");
+	   (xml-free-doc xml_doc1);
+	   ))
+)
