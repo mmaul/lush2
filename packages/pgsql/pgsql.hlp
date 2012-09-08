@@ -1,0 +1,37 @@
+#? **** pgsql: Interfaces to the Postgres Database
+This library provides a lowlevel interface mirroring the
+interface provided in the Postgres C Interface.
+
+{<p> {<b> Example } }
+{<code>
+(with-namespace pgsql-
+  (let ((db (pgsql-connectdb 
+       "host=localhost port=5432 dbname=multiple_sa user=dbuser password=xxx"))) 
+    (if (= (status db) (CONNECTION_OK))
+	(let ((result (exec db "SELECT * from contact")))
+	  (if (= (result-status result) (PGRES_TUPLES_OK))
+	      (let ((ncols  (nfields result)))
+		(for (i 0 (- ncols 1))
+		     (printf "%14s " (fname result i)))
+		(printf "\n")
+		(for (i 0 (- ncols 1))
+		     (printf "---------------" ))
+		(printf "\n")
+		(for (i 0 (- (ntuples result) 1))
+		     (for (j 0 (- ncols 1))
+			  (printf "%14s " (getvalue result i j)))
+		     (printf "\n"))
+		(printf "\n"))
+	      (error (result-error-message result)))
+	  (pgsql-clear result))
+	(error (printf "Failed to connect to database\n")))
+        (finish db)))
+ 
+</code>}
+
+#? *** << pgsql/pgsql.lsh
+
+
+
+
+
