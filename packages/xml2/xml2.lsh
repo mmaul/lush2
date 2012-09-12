@@ -5,6 +5,15 @@
 (in-namespace xml2-
 (libload "xml2_config")
 
+#? * Constant: <NODE_MANAGED>
+;;  - used in node constructor to specifiy class managed dallocation
+(defconstant xml2-NODE_MANAGED 1)
+(defconstant NODE_MANAGED 1)
+#? * Constant: <NODE_UNMANAGED>
+;;  - used in node constructor to specifiy libxml2 managed dallocation
+(defconstant xml2-NODE_UNMANAGED 0)
+(defconstant NODE_UNMANAGED 0)
+
 ;;//----------------------------------- utility fns
 ;;  fun isNull[t]: t -> bool = "(0==$1)";
 #? (is-null <p>)
@@ -89,13 +98,6 @@
 ;;  type void_ptr     = "void *";
 ;;  type xml_dtd_ptr  = "xmlDtdPtr";
 ;;  type xml_element_type = "xmlElementType";
-(defclass xmlNode object
-  ((-gptr- "xmlNodePtr") xmlNodePtr))
-
-(defmethod xmlNode xmlNode () 
-  (setq xmlNodePtr NULL)
-)
-
 ;  cstruct xmlNode {
 ;     _private:void_ptr;	    //application data
 ;    type:xml_element_type;  // XML_ATTRIBUTE_DECL, must be second !
@@ -114,10 +116,6 @@
 ;    line:ushort;            // line number
 ;    extra:ushort;           // extra data for XPath/XSLT
 ;  };
-;;(defsetter xmlNode set-type type (-int-) (-gptr- "xmlNodePtr") (to-gptr ()) 0 ) 
-;;(defgetter xmlNode get-type type (-int-) (-gptr- "xmlNodePtr") (to-gptr ()) 0 ) 
-;(defsetter xmlNode set-name name (-str-) (-str-) (to-gptr ()) "" ) 
-;(defgetter xmlNode get-name name (-str-) (-str-) (to-gptr ()) "" ) 
 
 (defun xml-doc-dump (FILE doc)
   (declare (-gptr- "FILE*") FILE) (declare (-gptr- "xmlDocPtr") doc)
@@ -206,7 +204,17 @@
   (let ((nodeptr (to-gptr ())))
     #{ $nodeptr = xmlNewNode(NULL,(const xmlChar *)($s)) #}
     nodeptr))
-  
+
+#? (xml-new-ns <nodeptr> <href> <prefix>)
+;; Creation of a new Namespace. This function will refuse to create a 
+;; namespace with a similar prefix than an existing one present on this node. 
+;; We use href==NULL in the case of an element creation where the namespace 
+;; was not defined.
+;;
+;; node:	the element carrying the namespace
+;; href:	the URI associated
+;; prefix:	the prefix for the namespace
+;; Returns:	a new namespace pointer or NULL
 (defun xml-new-ns (nodeptr s1 s2)
   (declare (-gptr- "xmlNodePtr") nodeptr)
   (declare (-str-) s1) (declare (-str-) s2)
@@ -353,6 +361,38 @@ t)
   #{ xmlSetProp($nodeptr1,(xmlChar *)$s1,(xmlChar *)$s2); #}
   t)
 
+(defun node-name (n)
+  (declare (-gptr- "xmlNodePtr") n)
+  (if (not (is-null n)) 
+      (let ((s "")) (declare (-str-) s) #{ $s = (char *)$n->name; if($s == 0){$s="WTF";}#} s) 
+      "")
+)
+
+(defun node-content (n)
+  (declare (-gptr- "xmlNodePtr") n)
+  (if (not (is-null n)) 
+      (let ((s "")) (declare (-str-) s) #{ $s = (char *)$n->content; #} s) 
+      "")
+)
+
+(defun node-children (n)
+  (declare (-gptr- "xmlNodePtr") n)
+  (if (not (is-null n)) 
+      (let ((c (to-gptr ()))) (declare (-gptr- "xmlNodePtr") c) #{ $c = $n->children; #} c)      (to-gptr ()))
+)
+
+(defun node-next (n)
+  (declare (-gptr- "xmlNodePtr") n)
+  (if (not (is-null n)) 
+      (let ((c (to-gptr ()))) (declare (-gptr- "xmlNodePtr") c) #{ $c = $n->next; #} c) 
+      (to-gptr ()))
+)
+(defun node-prev (n)
+  (declare (-gptr- "xmlNodePtr") n)
+  (if (not (is-null n)) 
+      (let ((c (to-gptr ()))) (declare (-gptr- "xmlNodePtr") c) #{ $c = $n->prev; #} c) 
+      (to-gptr ()))
+)
 
 ;  gen xml_set_prop (node:xml_node_ptr,name:string,value:string):xml_attr_ptr = {
 ;    return xml_set_prop(node,xml_char_ptr_of_char_ptr(cstr(name)),xml_char_ptr_of_char_ptr(cstr(value)));
@@ -398,6 +438,303 @@ proc xml_free_doc: xml_doc_ptr = "xmlFreeDoc($1);";
    #{ xmlFreeDoc($doc); #}
    t
    )
+#? *** DOM Interface to lowlevel XML2 functions
+;; Provides classes for major XML2 object types and managed memory
+;;
+;; Example: {<code>
+;; (with-namespace xml2-
+;;  (let ((doc (new xml2-document))
+;;       (txt "<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' \
+;;               'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'> \
+;;             <html xmlns='http://www.w3.org/1999/xhtml' xml:lang='en' lang='en'> \
+;;               <head> </head> \
+;;               <body> Hello World!! </body> \
+;;             </html>"))
+;;   (==> doc parseString txt)
+;;   (print (==> doc toStr) )
+;;   (==> doc -destructor)
+;; )) </code>}
+;;
+
+#? * Wrapper class for xmlDocument
+;; document contains the following lost
+;; <xmldocptr> a reference to the xmlDocPtr 
+(defclass document object
+  ((-gptr- "xmlDocPtr") xmldocptr))
+
+#? * (new document)
+;; Createa a new document object. You will need to populate
+;; the object by using <parseFile> , <parseString> , <parseHtmlString> , 
+;; <parseHtmlFile> or <newDoc> methods.
+(defmethod document document ()
+  (setq :this:xmldocptr  (to-gptr ())))
+
+#? (==> <document> newDoc <verson string>)
+;; Creates a empty document with the XML version specefied in
+;; the <version string> (usually 1.0).
+;; This method would normally be what is used when
+;; porgramatically creating documents
+(demethod document newDoc (doc)
+  (declare (-str-) doc)
+  (let ((docptr (to-gptr ())))
+    #{ $docptr = xmlNewDoc((const xmlChar *) $doc); #}
+    (setq :this:xmldocptr docptr)
+    t))
+
+#? (==> <document> parseFile <file name>)
+; Parses XML document contained in <file name>
+(defmethod document parseFile (file)
+  (declare (-str-) file)
+  (let ((xdoc (to-gptr ())))
+    (declare (-gptr-) xdoc)
+    #{ $xdoc = xmlParseFile($file); #}
+    (setq :this:xmldocptr xdoc)
+    t))
+
+#? (==> <document> parseString <xml string>)
+; Parses XML document contained in <xml string>
+(defmethod document parseString (s)
+  (declare (-str-) s)
+  (let ((xdoc (to-gptr ()))
+	(l (length s)))
+    (declare (-gptr-) xdoc)
+    (declare (-int-) l)
+    #{ $xdoc = xmlParseMemory($s,$l); #}
+    (setq :this:xmldocptr xdoc)
+    t
+    ))
+
+#? (==> <document> parseHTMLFile <HTML file>)
+; Parses HTML document contained in the file <HTML file>
+; Main difference is able to deal with non strict documents
+(defmethod document parseHTMLFile (file enc)
+  (declare (-str-) file)
+  (declare (-str-) enc)
+  (let ((xmldocptr (to-gptr ())))
+    (declare (-gptr-) xmldocptr)
+    #{ $xmldocptr = htmlParseFile($file,$enc); #}
+    (setq :this:xmldocptr xmldocptr)
+    t))
+
+#? (==> <document> parseHTMLString <HTML string>)
+; Parses HTML document contained in the string <HTML string>
+; Main difference is able to deal with non strict documents
+(defmethod document parseHTMLString (s)
+  (declare (-str-) s)
+  (let ((xmldocptr (to-gptr ())))
+    (declare (-gptr-) xmldocptr)
+    #{ $xmldocptr = htmlParseDoc((xmlChar *) $s,NULL); #}
+    (setq :this:xmldocptr xmldocptr)
+    t))
+
+#? (==> <document> toStr)
+;Dump an XML document in memory and return string representation of the document
+(defmethod document toStr ()
+  (let ((s "")
+	(sz 0)
+	(docptr :this:xmldocptr))
+    (declare (-gptr- "xmlDocPtr") docptr) 
+    (declare (-str-) s) (declare (-int-) sz)
+    #{ xmlChar *t_tcmp = NULL; 
+    xmlDocDumpMemory($docptr,(xmlChar **) & t_tcmp,& $sz);
+    $s = (char *) malloc(sizeof(char)*$sz+4);
+    strcpy($s,(char *)t_tcmp);
+    xmlFree(t_tcmp);
+    #}
+    s))
+
+#? (==> <document> freeDoc)
+;; Frees memory handle of wrapped xml2 object.
+;; This method would be used if the intent is
+;; to reuse the object but on a new document
+(demethod document freeDoc () ; xml_doc_ptr  
+   (let ((doc :this:xmldocptr))
+     (declare (-gptr- "xmlDocPtr") doc)
+     (setq :this:xmldocptr (to-gptr ()))
+     #{ xmlFreeDoc($doc); #}
+     t
+   ))
+#? (== <document> getRootElement)
+;; Returns root node objct 
+(demethod document getRootElement ()
+  (let ((docptr :this:xmldocptr)
+	(nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlDocPtr") docptr)
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlDocGetRootElement($docptr); #}
+    (new xml2-node nodeptr NODE_UNMANAGED)))
+
+#? (== <document> setRootElement <node instance>)
+;; Sets xmlNodePtr contained in <node instance>
+;; as the root element of the <document>
+(demethod document setRootElement (node-obj)
+  (declare (-obj- (xml2-node)) node-obj)
+  (let ((docptr :this:xmldocptr)
+	(nodeptr :node-obj:xmlnodeptr))
+    (declare (-gptr- "xmlDocPtr") docptr)
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    
+    #{xmlDocSetRootElement($docptr,$nodeptr); #}
+    ;(setq :node-obj:xmlnodeptr (to-gptr ()))
+    (setq :node-obj:managed NODE_UNMANAGED)
+    t))
+
+#? (-destructor)
+;; Performs memory dallocation
+(defmethod document -destructor ()
+  (print "document -destructor")
+  (when (<> :this:xmldocptr (to-gptr ()))
+    (==> this freeDoc))
+  t)
+
+#? * Wrapper class for xmlNode
+;; Slots:
+;; {<br>} <xmlnodeptr> - handle to xmlNodePtr 
+;; {<br>} <managed> - values should be one of NODE_MANAGED if there is an explicit 
+;; reference to the node or NODE_UNMANAGED if there is no persisten reference to the node
+(defclass node object
+  ((-gptr- "xmlNodePtr") xmlnodeptr)
+  ((-int-) managed)
+)
+
+#? * (new node <nodeptr>)
+;; Wraps xmlNode in node object
+;; xmlNode references obtained from 
+;; results returned from the low level
+;; interface to xml2
+(defmethod node node ( nodeptr managed )
+  (declare (-gptr- "xmlNodePtr") nodeptr)
+  (declare (-int-) managed)
+  (setq :this:xmlnodeptr nodeptr)
+  (setq :this:managed managed)
+)
+
+#? (==> <node> freeNode)
+;; Dealocates xmlNode object contained in node object
+;; and set xmlnodeptr slot to NULL
+(defmethod node freeNode ()
+  (let ((nodeptr :this:xmlnodeptr))
+    (setq :this:xmlnodeptr (to-gptr ()))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ xmlFreeNode($nodeptr); #}
+    )
+  t)
+
+#? (==> <node> freeNodeList)
+;; Dealocates xmlNode object and child nodes contained in node object
+;; and set xmlnodeptr slot to NULL
+(demethod node freeNodeList ()
+  (let ((nodeptr :this:xmlnodeptr))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ xmlFreeNodeList($nodeptr); #}
+    t))
+
+#? (==> <node> -destructor)
+(defmethod node -destructor ()
+  (print "node -destructor")
+  (when (and (= managed  NODE_MANAGED) (<> :this:xmlnodeptr (to-gptr ())))
+    (==> this freeNodeList))
+  t)
+
+;xml-new-ns (nodeptr s1 s2)
+(defun newNodeNS (nsptr s)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlNewNode($nsptr,(const xmlChar *)($s)); #} 
+    (new node nodeptr NODE_MANAGED)))
+
+#? (newNode <name>)
+;; Constructs new node with none name specified in <name>
+(defun newNode (s)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ 
+    $nodeptr = xmlNewNode(NULL,xmlCharStrdup("WTF")) #}
+    (new node nodeptr NODE_MANAGED)))
+
+#? (newTextNode <name>)
+;; Constructs new text node with none name specified in <name>
+(defun newTextNode (s)
+  (declare (-str-) s)
+  (let ((nodeptr (to-gptr ())))
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    #{ $nodeptr = xmlNewText((const xmlChar *)$s); #}
+    (new node nodeptr NODE_MANAGED)))
+
+#? (==> <node> addChild <child node>)
+;; Adds nodeptr contained in <child node> as a child node of <node>
+;; the xmlnodeptr slot of the <child node> is set to NULL
+(defmethod node addChild (child-node)
+  (declare (-obj- (node)) child-node)
+
+  (let ((nodeptr (to-gptr ()))
+	(nodeptr1 :this:xmlnodeptr)
+	(nodeptr2 :child-node:xmlnodeptr))
+    (declare (-gptr- "xmlNodePtr") nodeptr2)
+    (declare (-gptr- "xmlNodePtr") nodeptr1)
+    (declare (-gptr- "xmlNodePtr") nodeptr)
+    (setq :child-node:xmlnodeptr (to-gptr ()))
+    #{ $nodeptr = xmlAddChildList($nodeptr1,$nodeptr2); #}
+    (new node nodeptr NODE_UNMANAGED)))
+
+;  publish "parent:xml_node_ptr,namespace:xml_ns_ptr,name:string,content:string";
+
+#? (==> <node> newChild <name> <content>)
+;; Create new xmlNode with node name of <name>
+;; containing content in <content>
+(demethod node newChild ( s1 s2)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (==> this newChildNS (to-gptr ()) s1 s2))
+
+#? (==> <node> newChild <nsptr> <name> <content>)
+;; Create new xmlNode with node name of <name>
+;; containing content in <content> with
+;; namespace in <nsptr>. If <nsptr> is null
+;; namespace of parent is used
+(demethod node newChildNS ( nsptr s1 s2)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (let ((nodeptr (to-gptr ()))
+	(nodeptr1 :this:xmlnodeptr))
+    (declare (-gptr- "xmlNodePtr") nodeptr1)
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlNewChild($nodeptr1,$nsptr,(const xmlChar *)($s1),(const xmlChar *)($s2)); #}
+    (new node nodeptr NODE_UNMANAGED)))
+
+#? (==> <node> newTextChild <name> <content>)
+;; Create new text xmlNode with node name of <name>
+;; containing content in <content>
+(demethod node newTextChild ( s1 s2)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (==> this newTextChildNS (to-gptr ()) s1 s2))
+
+#? (==> <node> newTextChildNS <nsptr> <name> <content>)
+;; Create new xmlNode with node name of <name>
+;; containing content in <content> with
+;; namespace in <nsptr>. If <nsptr> is null
+;; namespace of parent is used
+(defmethod node newTextChildNS (nsptr s1 s2)
+  (declare (-gptr- "xmlNsPtr") nsptr)
+  (declare (-str-) s1)
+  (declare (-str-) s2)
+  (let ((nodeptr (to-gptr ()))
+	(nodeptr1 :this:xmlnodeptr))
+    (declare (-gptr- "xmlNodePtr") nodeptr1)
+    (declare (-gptr- "xmlNodePtr"))
+    #{  $nodeptr = xmlNewTextChild($nodeptr1,$nsptr,(const xmlChar *)($s1),(const xmlChar *)($s2)); #}
+    (new node nodeptr NODE_UNMANAGED)))
+
+(defmethod node name ()
+  (node-name :this:xmlnodeptr))
+
+(defmethod node content ()
+  (node-content :this:xmlnodeptr))
 
 )
 
@@ -411,7 +748,7 @@ proc xml_free_doc: xml_doc_ptr = "xmlFreeDoc($1);";
 (dhc-make-with-libs () 
                     (list xml2-libxml2)
 		    headers
-		    (xml2-xmlNode xml2-xmlNode)
+		    xml2-is-null
 		    xml2-xml-parse-file
 		    xml2-xml-parse-string
 		    xml2-html-parse-file
@@ -449,6 +786,24 @@ proc xml_free_doc: xml_doc_ptr = "xmlFreeDoc($1);";
 		    xml2-xml-copy-node
 		    xml2-xml-copy-node-list
 		    xml2-xml-free-doc
+		    xml2-node-name
+		    xml2-node-content
+		    xml2-node-children
+		    xml2-node-prev
+		    xml2-node-next
+		    (xml2-node xml2-node freeNode freeNodeList addChild
+			       newChildNS newChild newTextChildNS newTextChild 
+			       name content)
+		    xml2-newNodeNS
+		    xml2-newNode
+		    xml2-newTextNode
+		    (xml2-document xml2-document parseFile parseString 
+				   parseHTMLString parseHTMLFile toStr
+				   newDoc 
+getRootElement 
+setRootElement
+				   freeDoc)
+		   
 )
 
 

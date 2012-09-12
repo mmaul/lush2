@@ -1,4 +1,8 @@
 #? *** Base64 Codec
+;; {<p>}
+;; Library for encoding and decoding Base64 strings
+;; {<br>} 
+;; {<b> namespace base64- }
 (defnamespace base64- '())
 
 (in-namespace base64-

@@ -1,7 +1,10 @@
 #? *** CSV codec
+;; Library for encoding and decoding Comma Seperated Value strings
 ;; This module should "mostly" support RFC 4180 
-;; It supportes quoted CR|CRLR as long as the line reader passes then entire
+;; It supportes quoted CR|CRLF strings as long as the line reader passes then entire
 ;; string to decode
+;; {<br>}
+;; {<b> namespace csv- }
  
 (defnamespace csv- '())
 (in-namespace csv-

@@ -1,4 +1,9 @@
 #? *** URI Encoder/Decoder
+;; {<p>}
+;; Library for encoding string to and from URI encodings
+;; {<br>}
+;; {<b> namespace uri- }
+
 (defnamespace uri- '())
 
 (in-namespace uri-
