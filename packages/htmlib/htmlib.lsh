@@ -1,5 +1,25 @@
+#?  *** htmlib Web Development Helpers.
+;; {<br>}
+;; Once lush is inhibited from sending names of loaded libraries to stdout
+;; in can be used in traditional CGI scripts. 
+;; {<p>} {<code>
+;; #!/bin/sh
+;; exec lush  "$0" "$@"
+;; !#
+;; (http-header)
+;; (print "Hello World")
+;; {<br>}
+;;{<b> namespace htmplib- }
 
 (in-namespace htmlib-
+
+#? (http-header)
+;; Outputs very basic HTTP header
+;; Call this before sending anyother output to STDOUT
+(defun http-header ()
+  (printf "Content-type: text/html\n\n")
+)
+
 #? (attributes <attribute alist>)
 ;; Takes <attributes alist> and renders attributes sutiable for use in 
 ;; HTML tag
@@ -48,8 +68,8 @@
 	   "</table>"))
 
 
-#? (select <id> <name> <attributes> <options>)
-
+#? (select <id> <name> <options>)
+;; Generate pull down having <id> and <name> with <options>
 (defun select-option (id name options)
   (str-cat "<select name='" name "' id='" id "'>"
 	   (str-join "" (mapcar (lambda (s) (str-cat "<option>" s "</option>")) options))

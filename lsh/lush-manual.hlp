@@ -162,6 +162,8 @@ Current packages include:
 
 #? *** << codec/codec.hlp
 
+#? *** << htmlib/htmlib.hlp
+
 #? *** << sn28/sn28.hlp
 
 #? *** << audio/audio.hlp
@@ -173,10 +175,6 @@ Current packages include:
 #? *** << video/libdc/libdc.hlp
 
 #? *** << devices/devices.hlp
-
-#? *** << htmlib/README.md
-
-#? *** << htmlib/README.md
 
 #? **** Applications
 {<p>

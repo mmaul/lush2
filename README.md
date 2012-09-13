@@ -1,13 +1,32 @@
 ------------------------------------------------------------------------
 (incr LUSH2): The Lisp Universal SHell, version 2.x enhanced
 ------------------------------------------------------------------------
-(incr LUSH2) is a fork of LUSH2 intended to 
-add features and capabilities to the LUSH2. Goals include enhancements to 
-syntax, the compiler and libraries. Current extensions include a CGI 
-packages, a bindng for the PostgreSQL database. Planned enhancements are 
-the implementation of green threads and a ZeroMQ binding for use as an 
-IPC and thead message bus. Other enhancements include a native HTTP client
-to enhace data acquisition capabilities and JSON parser. 
+(incr LUSH2) is a fork of LUSH2 intended to add features and capabilities to the LUSH2. 
+(The lush project page is at lush.sourceforege.net) (make no mistake this is an 
+exxtension to lush)
+
+Current enhancements include:
+* PosgresSQL Database Bindings
+* Base64 encoding/decoding library
+* CSV encoding/decoding library
+* URI encoding/decoding library
+* CGI Programming
+
+Lush is an attractive platform for Machine Learnine. Easy bindings to
+C make it especially attreactive in project where machine learnining
+needs to be implemented on an embeded platform. It is also quite useful
+as a exploratory platform for the development of machine learning algorithims.
+One thing lush needs is libraries to facilitate collection of data from external
+sources. 
+
+Enhancements in progress:
+* libxml2 bindings
+
+Planned enhancements:
+ZeroMQ bindings
+JSON codec
+
+Now for the standard LUSH Readme
 
 ------------------------------------------------------------------------
 LUSH2: The Lisp Universal SHell, version 2.x
