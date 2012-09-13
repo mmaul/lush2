@@ -1,0 +1,17 @@
+#? **** HTMLIB CGI helpers
+ {<br>}
+ Once lush is inhibited from sending names of loaded libraries to stdout
+ in can be used in traditional CGI scripts. 
+ {<p>} {<code>
+ #!/bin/sh
+ exec lush  "$0" "$@"
+ !#
+ (http-header)
+ (print "Hello World")
+ </code>}
+ {<br>}
+{<b> namespace htmplib- }
+
+#? *** << htmlib/htmlib.lsh
+
+

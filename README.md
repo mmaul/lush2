@@ -1,9 +1,7 @@
 ------------------------------------------------------------------------
 (incr LUSH2): The Lisp Universal SHell, version 2.x enhanced
 ------------------------------------------------------------------------
-(incr LUSH2) is a fork of LUSH2 intended to add features and capabilities to the LUSH2. 
-(The lush project page is at lush.sourceforege.net) (make no mistake this is an 
-exxtension to lush)
+(incr LUSH2) is a fork of LUSH2 (lush.sourceforege.net) intended to add features and capabilities to the LUSH2. 
 
 Current enhancements include:
 * PosgresSQL Database Bindings
@@ -13,7 +11,7 @@ Current enhancements include:
 * CGI Programming
 
 Lush is an attractive platform for Machine Learnine. Easy bindings to
-C make it especially attreactive in project where machine learnining
+C make Lush2 especially useful in projects where machine learnining
 needs to be implemented on an embeded platform. It is also quite useful
 as a exploratory platform for the development of machine learning algorithims.
 One thing lush needs is libraries to facilitate collection of data from external
