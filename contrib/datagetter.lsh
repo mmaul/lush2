@@ -3,7 +3,7 @@
 ;;; Bronze
 ;;; Copyright (C) Scott Locklin, Lugos LLC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(libload "codec/csv/csv")
 #? *** Financial data getter 
 ;; originally designed for yahoo data only, to be extended as a general
 ;; set of tools for obtaining financial data online. Depends on wget 
@@ -11,14 +11,28 @@
 ;; yahoo seems to have several ways to get data
 ;; one of them is documented at http://www.gummy-stuff.org/Yahoo-data.htm
 
+(defparameter datadir ".")
+(defconstant yahoo-finance-table-fmt (list identity str-val str-val str-val 
+					   str-val str-val str-val str-val
+					   ))
+(defparameter *spd*         (* 24 3600))
+
+(de read-data (ticker)
+  (read-lines (concat datadir "/" ticker ".CSV")))
 
 #? (yahoo-get-price <ticker>)
 ;; <ticker> is a string representing the stock ticker
 (de yahoo-get-price (ticker)
+  (nth 1 (yahoo-get-quote ticker)))
+
+
+(de yahoo-get-quote (ticker)
   (yahoo-get-now ticker)
-  (let ((out (comma-parser (car (read-lines (concat ticker ".CSV"))) 2)))
-    (csv-junk-collector ticker)
-    out))
+  (csv-decode (car (read-data ticker)) "," t
+	      (list identity str-val identity identity str-val str-val 
+		    str-val str-val str-val)))
+
+
 
 #? (yahoo-get-dividend <ticker> <start> <finish>)
 ;; gets the dividends
@@ -32,7 +46,7 @@
     (outhash "Keys" (list-delete cols 0))
     (for (j 2 (length cols))
 	 (outhash (nth cols j)
-		  (mapfor (i lenraw 2 -1) (comma-parser (nth rawdata i) j))))
+		  (mapfor (i lenraw 2 -1) (comma-parser (nth j rawdata i)))))
     (csv-junk-collector ticker)
     outhash))	 
 
@@ -57,30 +71,72 @@
 #? (yahoo-get-now <ticker>)
 ;; returns yahoo's price for a given <ticker> now
 (de yahoo-get-now (ticker)
-  (sys (concat "wget \"http://download.finance.yahoo.com/d/table.csv" 
+  (sys (concat "wget -q \"http://download.finance.yahoo.com/d/table.csv" 
 	       (concat "?s=" ticker "&f=sl1d1t1c1ohgv&e=.csv\" -O " 
-		       ticker ".CSV"))))
+		     datadir "/"  ticker ".CSV"))))
 
 #? (yahoo-get-historical <ticker> <start> <finish>)
 ;; <ticker> is a string representing the stock ticker
 ;;<start> <finish> are dates
 ;; returns a hashtable with the complete available data from yahoo
-(de yahoo-get-historical (ticker start finish)
+(de yahoo-get-historical-old (ticker start finish)
   (sys (build-yahoo-query ticker start finish))
   (let* ((rawdata (read-lines (concat ticker ".CSV")))
 	 (lenraw (length rawdata))
-	 (cols (comma-splitter (car rawdata)))
+	 (cols (csv-decode (cadr rawdata) ))
 	 (outhash (htable)))
-    (outhash "Date" (mapfor (i lenraw 2 -1) (date-getter (nth rawdata i))))
+    (outhash "Date" (mapfor (i lenraw 2 -1) (let ((d (date-getter (nth i rawdata)))) )))
+    
     (outhash "Keys" (list-delete cols 0))
     (for (j 2 (length cols))
 	 (outhash (nth cols j)
-		  (mapfor (i lenraw 2 -1) (comma-parser (nth rawdata i) j))))
+		  (mapfor (i lenraw 2 -1) (comma-parser (nth i rawdata ) j))))
     (csv-junk-collector ticker)
     outhash))
 
+#? (yahoo-get-historical <ticker> <start> <finish>)
+;; <ticker> is a string representing the stock ticker
+;;<start> <finish> are dates
+;; returns a list where first row is column labels and remaining data 
+(de yahoo-get-historical (ticker start finish)
+  (sys (build-yahoo-query ticker start finish))
+  (let* ((rawdata (read-lines (concat ticker ".CSV")))
+	 (cols (csv-decode (car rawdata)))
+	 (ncols (length cols))
+	 (nrows (length rawdata))
+	 (d (float-array nrows ncols))
+	 (*stdtd*     (date-to-day start)))
+    (for (i 1 (- nrows 1))
+	 (let* ((row (csv-decode (nth i rawdata) 
+				 "," t yahoo-finance-table-fmt))
+		(dt (date-to-day (string-to-date (nth 0 row) 'year 'day)))
+		)
+	   (d (- i 1) 0 (* (- dt *stdtd*) *spd*))
+					;(d (- i 1) 0 (str-date-to-num (nth 0 row)))
+	   (for (j 1 (- ncols 1))
+		(d (- i 1) j (nth j row)))))
+    (list cols d)))
+
+(defun read-finance-data ()
+  (let ((m (double-array 500 12))
+        (n 0) )
+    (do ((line (lines *finance.dat*)))
+      (let* ((ds (str-split line "\t"))
+             ((mon day yr) (str-split (car ds) "/"))
+             (date (string-to-date (sprintf "%s-%s-%s" yr mon day) 'year 'day))
+             (row (idx-select m 0 n))
+             (d0 (* (- (date-to-day date) *dtd2000*) *spd*)) )
+        (row () (cons n (cons d0 (mapcar val (cdr ds)))))
+        (incr n)))
+    (idx-trim! m 0 0 n)
+    m))
+
+
+;   (mapcar (lambda (l) (csv-decode l "," t yahoo-finance-table-fmt)) (cdr rawdata)))))
+
 #? (build-yahoo-query <ticker> <start> <finish>)
 ;; returns the string needed to make the query to yahoo; only split out for debugging reasons
+;; Where <start> and <finish> are instances of date class
 (de build-yahoo-query (ticker start finish)
   (let* ((stt (date-splitter start))
 	 (fin (date-splitter finish))
@@ -90,7 +146,7 @@
 	 (fm (yahoo-month-fixer (car fin)))
 	 (sd (str (cadr stt)))
 	 (fd (str (cadr fin))))
-  (concat "wget \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&a=" sm "&b=" sd "&c=" sy "&d=" fm "&e=" fd "&f=" fy 
+  (concat "wget -q \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&a=" sm "&b=" sd "&c=" sy "&d=" fm "&e=" fd "&f=" fy 
 	  "&g=d&ignore=.csv\" -O " ticker ".CSV")))
 
 #? (build-dividend-query <ticker> <start> <finish>)
@@ -104,7 +160,7 @@
 	 (fm (yahoo-month-fixer (car fin)))
 	 (sd (str (cadr stt)))
 	 (fd (str (cadr fin))))
-  (concat "wget \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&a=" sm "&b=" sd "&c=" sy "&d=" fm "&e=" fd "&f=" fy 
+  (concat "wget -q \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&a=" sm "&b=" sd "&c=" sy "&d=" fm "&e=" fd "&f=" fy 
 	  "&g=v&ignore=.csv\" -O " ticker ".CSV")))
 
 #? (yahoo-month-fixer <n>)
@@ -118,7 +174,7 @@
 #? (csv-junk-collector <name>)
 ;; for removing ticker CSV's returned by wget
 (de csv-junk-collector (name)
-    (sys (concat "rm -f " name ".CSV")))
+    (sys (concat "rm -f " datadir "/" name ".CSV")))
 
 #? (comma-parser list n)
 ;; splits up a list of text into sublists by commas
@@ -164,9 +220,7 @@
 ;; changes the dates in yahoo's format on a line of its CSV to date
 ;; objects
 (de date-getter (line)
-  (string-to-date (nth (regex-split  "[^-]+[^,]+" line) 1) 'year 'day))
-
-
+  (string-to-date (nth 1 (regex-split  "[^-]+[^,]+" line)) 'year 'day))
 
 #? (date-splitter <date>)
 ;; returns simple list (mm dd yyyy) from <date>
@@ -175,6 +229,15 @@
  (list (alist-get 'month dt)
        (alist-get 'day dt) 
        (+ 1900 (alist-get 'year dt)))))
+
+(de str-date-to-num (s) 
+  (str-val (str-join "" (regex-extract  "([0-9]+)-([0-9]+)-([0-9]+)" s))))
+
+(de ticker-number (ticker)
+  (str-join "" (mapcar str (explode-chars ticker))))
+
+(de ticker-number-string (ticker-num)
+  (str-join "" (reverse (let ((s ticker-num) (r '()))(for (i 0 (- (length s)1) 2)  (setq r (cons (chr (str-val (str-mid s i 2))) r)))))))
 
 
 #? (oanda-getter currency exchange start finish)
@@ -205,7 +268,7 @@
 	 
 
 (de oanda-string (currency exchange start finish)
-(concat "wget \"http://www.oanda.com/convert/fxhistory?lang=en"
+(concat "wget -q \"http://www.oanda.com/convert/fxhistory?lang=en"
 	       "&date=" (date-to-oanda finish)
 	       "&margin_fixed=0&expr=" currency
 	       "&exch2=&exch=" exchange
