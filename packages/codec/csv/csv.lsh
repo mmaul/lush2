@@ -5,7 +5,7 @@
 ;; string to decode
 ;; {<br>}
 ;; {<b> namespace csv- }
- 
+(libload "util/list")
 (defnamespace csv- '())
 (in-namespace csv-
 ;;(defconstant skip-st 1)
@@ -14,7 +14,7 @@
 (defconstant complete-st 4)
 (defvar quote-lit (asc "\""))
 (defvar backslash-lit (asc "\\"))
-
+   
 #? (get-csv-value (<s> <o> &optional <osep> <trim>)
 ;; Given a string <s> containing a line of CSV text and
 ;; <o> a offset returns a list containing the next column of data and the 
@@ -30,6 +30,7 @@
 	(i o)
 	(lst 0)
 	(sep (asc (if osep osep ","))))
+;(print complete-st state i n)
     (while (and (<> complete-st state) (< i n))
       (let ((ch (s i))) 
 	(cond
@@ -62,18 +63,24 @@
 ;; otherwise the sepororator is the tab character
 ;; if <trim> is not nill leading and trailing whitespace
 ;; is removed from the  coloumn
-(defun decode (s  &optional osep trim)
+;; <conversion> if supplied will be a list of monodic functions
+;; which will be applied to the resultant
+(defun decode (s  &optional osep trim conversions)
   (let ((o 0)
 	(ret ())
 	(fin ())
 	(sep  (if osep osep ","))
 	(trim  (if trim trim ","))
+	(conv (and (listp conversions) (> (length conversions) 0)))
 	)
+    ;(print "")
     (while (not fin)
       (let-filter (((v p) (get-csv-value s o sep trim)))
 	(if v (setq ret (cons v ret)) (setq fin t))
 	(setq o p)))
-    (reverse ret)))
+    (let ((resultant (reverse ret)))
+      ;(print conv)
+      (if conv (fzip conversions resultant) resultant))))
 
 #? (encode (<csv-list> &optional <sep>)
 ;; Encodes list of numeric and strings into a CSV encoded string

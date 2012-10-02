@@ -1,0 +1,32 @@
+
+#? (zipwith <f> <x> <y>)
+; applies function <f> to each element of <x> and <y>
+; until last element of x or y is reached
+(defun zipwith (f x y &optional acc)
+  (reverse (cond
+   ((null x) acc)
+   ((null y) acc)
+   ( t (zipwith f (cdr x) (cdr y) (cons (f (car x) (car y)) acc))))))
+
+#? (zip <x> <y>)
+; creates a list of pairs of each element of  <x> and <y>
+; until last element of x or y is reached
+(defun zip (x y &optional acc)
+  (cond
+   ((null x) (reverse acc))
+   ((null y) (reverse acc))
+   ( t (zip (cdr x) (cdr y) (cons (list (car x) (car y)) acc)))))
+
+#? (fzip <f> <y>)
+; applies each function in list of functions <f> to each element of list <y>
+; until last element of f or y is reached
+(defun fzip (f y &optional acc)
+  (cond
+   ((null f) (reverse acc))
+   ((null y) (reverse acc))
+   ( t (fzip (cdr f) (cdr y) (cons ((car f) (car y)) acc)))))
+
+
+
+
+

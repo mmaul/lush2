@@ -1,0 +1,9 @@
+
+#? (zipwith <f> <x> <y>)
+; applies function <f> to each element of <x> and <y>
+; until last element of x or y is reached
+(defun zipwith (f x y &optional acc)
+  (reverse (cond
+   ((null x) acc)
+   ((null y) acc)
+   ( t (zipwith f (cdr x) (cdr y) (cons (f (car x) (car y)) acc))))))
