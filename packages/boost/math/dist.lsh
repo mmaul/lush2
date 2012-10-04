@@ -1,0 +1,74 @@
+#? ** Wrapper for Boost Normal Distributions 
+;; (defvar nn (new Normal 0 1))
+;; (print (==> nn pdf 10))
+;; (defvar vv (new NormalVector [d .1 .22 .5 .88 .55 .333 .234]))
+;; (print (==> vv cdf .5))
+
+;;(defnamespace boost-math- '())
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+                         
+
+(defclass Normal object
+  ((-double-) mean  sd )
+  ((-gptr- "normal *") normal-dist))
+
+(defmethod Normal Normal (m s)
+  (declare (-double-) m s)
+  (setq mean m sd s)
+  (setq normal-dist (let ((nptr (to-gptr ()))) (declare (-gptr- "normal *") nptr) #{$nptr = new normal($mean,$sd);#})))
+  
+(defmethod Normal pdf (z)
+  (declare (-double-) z)
+  (let ((r 0)
+	(s :this:normal-dist))
+    (declare (-double-) r)
+    (declare (-gptr- "normal *") s)
+    #{ $r = pdf(*$s,$z); #}
+    r))
+
+(defmethod Normal cdf (z)
+  (declare (-double-) z)
+  (let ((r 0)
+	(s :this:normal-dist))
+    (declare (-double-) r)
+    (declare (-gptr- "normal *") s)
+    #{ $r = cdf(*$s,$z); #}
+    r))
+
+
+(defmethod Normal quantile (z)
+  (declare (-double-) z)
+  (let ((r 0)
+	(s :this:normal-dist))
+    (declare (-double-) r)
+    (declare (-gptr- "normal *") s)
+    #{ $r = quantile(*$s,$z); #}
+    r))
+
+(defclass NormalVector Normal
+  ((-idx1- (-double-)) v))
+
+(defmethod NormalVector NormalVector (vec)
+  (declare (-idx1- (-double-)) vec)
+  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
+  (==> this Normal mean sd)
+)
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_dist" '() 
+#{ 
+           #include <boost/math/distributions/normal.hpp> // for normal_distribution
+           using boost::math::normal; // typedef provides default type is double.
+#}
+		     (Normal Normal pdf cdf)
+		     (NormalVector NormalVector)
+
+)
+  
+)
+
