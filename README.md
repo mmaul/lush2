@@ -9,6 +9,7 @@ Current enhancements include:
 * CSV encoding/decoding library
 * URI encoding/decoding library
 * CGI Programming
+* Bindings for boost math libraries
 
 Lush is an attractive platform for Machine Learnine. Easy bindings to
 C make Lush2 especially useful in projects where machine learnining
@@ -19,6 +20,9 @@ sources.
 
 Enhancements in progress:
 * libxml2 bindings
+
+News:
+* Updated datagetter.lsh for loading quotes from Yahoo Finance into Arrays
 
 Planned enhancements:
 ZeroMQ bindings
