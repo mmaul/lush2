@@ -1,0 +1,59 @@
+#? ** Wrapper for Boost Log Normal Distributions 
+;;(defnamespace boost-math- '())
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+(defclass LogNormal object
+  ((-double-) location  scale )
+  ((-gptr- "lognormal *") dist))
+
+(defmethod LogNormal LogNormal (l s)
+  (declare (-double-) l s)
+  (setq location l scale s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "lognormal *") nptr) #{$nptr = new lognormal($location,$scale);#})))
+
+(defmethod LogNormal -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "lognormal *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 LogNormal quantile "lognormal *")
+(defnmp-accessor/1 LogNormal cdf "lognormal *")
+(defnmp-accessor/1 LogNormal pdf "lognormal *")
+(defnmp-accessor-complement/1 LogNormal cdf "lognormal *")
+(defnmp-accessor/1 LogNormal chf "lognormal *")
+(defnmp-accessor/1 LogNormal hazard "lognormal *")
+(defnmp-accessor/0 LogNormal kurtosis "lognormal *")
+(defnmp-accessor/0 LogNormal kurtosis_excess "lognormal *")
+(defnmp-accessor/0 LogNormal mean "lognormal *")
+(defnmp-accessor/0 LogNormal median "lognormal *")
+(defnmp-accessor/0 LogNormal mode "lognormal *")
+(defnmp-accessor-complement/1 LogNormal quantile "lognormal *")
+(defnmp-accessor/0 LogNormal skewness "lognormal *")
+(defnmp-accessor/0 LogNormal standard_deviation "lognormal *")
+(defnmp-accessor/0 LogNormal variance "lognormal *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_log_normal_dist" '() 
+#{ 
+           #include <boost/math/distributions/lognormal.hpp> // for normal_distribution
+           using boost::math::lognormal; // typedef provides default type is double.
+#}
+		     (LogNormal LogNormal -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

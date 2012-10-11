@@ -1,0 +1,76 @@
+#? ** Wrapper for Boost Normal Distributions 
+;; (defvar nn (new Normal 0 1))
+;; (print (==> nn pdf 10))
+;; (defvar vv (new NormalVector [d .1 .22 .5 .88 .55 .333 .234]))
+;; (print (==> vv cdf .5))
+
+;;(defnamespace boost-math- '())
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+                         
+
+(defclass Normal object
+  ((-double-) mean  sd )
+  ((-gptr- "normal *") dist))
+
+(defmethod Normal Normal (m s)
+  (declare (-double-) m s)
+  (setq mean m sd s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "normal *") nptr) #{$nptr = new normal($mean,$sd);#})))
+
+(defmethod Normal -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "normal *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 Normal quantile "normal *")
+(defnmp-accessor/1 Normal cdf "normal *")
+(defnmp-accessor/1 Normal pdf "normal *")
+(defnmp-accessor-complement/1 Normal cdf "normal *")
+(defnmp-accessor/1 Normal chf "normal *")
+(defnmp-accessor/1 Normal hazard "normal *")
+(defnmp-accessor/0 Normal kurtosis "normal *")
+(defnmp-accessor/0 Normal kurtosis_excess "normal *")
+(defnmp-accessor/0 Normal mean "normal *")
+(defnmp-accessor/0 Normal median "normal *")
+(defnmp-accessor/0 Normal mode "normal *")
+;    range. returns pair
+(defnmp-accessor-complement/1 Normal quantile "normal *")
+(defnmp-accessor/0 Normal skewness "normal *")
+(defnmp-accessor/0 Normal standard_deviation "normal *")
+;    support. return pair
+(defnmp-accessor/0 Normal variance "normal *")
+
+(defclass NormalVector Normal
+  ((-idx1- (-double-)) v))
+
+(defmethod NormalVector NormalVector (vec)
+  (declare (-idx1- (-double-)) vec)
+  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
+  (==> this Normal mean sd)
+)
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_dist" '() 
+#{ 
+           #include <boost/math/distributions/normal.hpp> // for normal_distribution
+           using boost::math::normal; // typedef provides default type is double.
+#}
+		     (Normal Normal -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+)
+		     (NormalVector  NormalVector)
+
+)
+  
+)
+

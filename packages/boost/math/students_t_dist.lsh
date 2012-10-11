@@ -1,0 +1,54 @@
+#? ** Wrapper for Boost Student_t Distributions 
+
+(libload "boost/math/dist_util")
+;;(defnamespace boost-math- '())
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+(defclass StudentsT object ((-gptr- "students_t *") dist) ((-double-) v))
+
+(defmethod StudentsT StudentsT (vv)
+  (declare (-double-) vv)
+  (setq v vv)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "students_t *") nptr) #{$nptr = new students_t($v);#})))
+
+(defmethod StudentsT -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "students_t *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 StudentsT quantile "students_t *")
+(defnmp-accessor/1 StudentsT cdf "students_t *")
+(defnmp-accessor/1 StudentsT pdf "students_t *")
+(defnmp-accessor-complement/1 StudentsT cdf "students_t *")
+(defnmp-accessor/1 StudentsT chf "students_t *")
+(defnmp-accessor/1 StudentsT hazard "students_t *")
+(defnmp-accessor/0 StudentsT kurtosis "students_t *")
+(defnmp-accessor/0 StudentsT kurtosis_excess "students_t *")
+(defnmp-accessor/0 StudentsT mean "students_t *")
+(defnmp-accessor/0 StudentsT median "students_t *")
+(defnmp-accessor/0 StudentsT mode "students_t *")
+(defnmp-accessor-complement/1 StudentsT quantile "students_t *")
+(defnmp-accessor/0 StudentsT skewness "students_t *")
+(defnmp-accessor/0 StudentsT standard_deviation "students_t *")
+(defnmp-accessor/0 StudentsT variance "students_t *")
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_students_t_dist" '() 
+#{ 
+           #include <boost/math/distributions/students_t.hpp> // for normal_distribution
+           using boost::math::students_t; // typedef provides default type is double.
+#}
+		     (StudentsT StudentsT -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+
