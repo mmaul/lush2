@@ -1,20 +1,20 @@
-#? ** Wrapper for Boost Normal Distributions 
-;; (defvar nn (new Normal 0 1))
-;; (print (==> nn pdf 10))
-;; (defvar vv (new NormalVector [d .1 .22 .5 .88 .55 .333 .234]))
-;; (print (==> vv cdf .5))
-
-;;(defnamespace boost-math- '())
 (libload "boost/math/dist_util")
 (libload "libnum/stats")
 (defvar boost-math-cflags ())
 
                          
-
+#? * Normal
+;; Normal Distribution
+;; {<pre>
+;; Slots: mean:-double-  
+;;           sd:-double-
+;;           dist:-gptr- normal* 
+;; </pre>}
 (defclass Normal object
   ((-double-) mean  sd )
   ((-gptr- "normal *") dist))
 
+#? *(new Normal <mean> <sd>)
 (defmethod Normal Normal (m s)
   (declare (-double-) m s)
   (setq mean m sd s)
@@ -26,6 +26,7 @@
   #{ free($nptr); #}
   ) () )
 
+; common distribution methods
 (defnmp-accessor/1 Normal quantile "normal *")
 (defnmp-accessor/1 Normal cdf "normal *")
 (defnmp-accessor/1 Normal pdf "normal *")
@@ -37,12 +38,13 @@
 (defnmp-accessor/0 Normal mean "normal *")
 (defnmp-accessor/0 Normal median "normal *")
 (defnmp-accessor/0 Normal mode "normal *")
-;    range. returns pair
 (defnmp-accessor-complement/1 Normal quantile "normal *")
 (defnmp-accessor/0 Normal skewness "normal *")
 (defnmp-accessor/0 Normal standard_deviation "normal *")
-;    support. return pair
 (defnmp-accessor/0 Normal variance "normal *")
+;    support. return pair
+;    range. returns pair
+
 
 (defclass NormalVector Normal
   ((-idx1- (-double-)) v))

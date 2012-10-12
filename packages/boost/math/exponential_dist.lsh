@@ -1,0 +1,60 @@
+(libload "boost/math/dist_util")
+;;(defnamespace boost-math- '())
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Exponential
+;; Exponential Distribution
+;; {<pre>
+;; Slots: i:-double-  
+;;           dist:-gptr- exponential* 
+;; </pre>}
+(defclass Exponential object ((-gptr- "exponential *") dist) ((-double-) i))
+
+#? *(new Exponential <i>)
+(defmethod Exponential Exponential (i1)
+  (declare (-double-) i1)
+  (setq i i1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "exponential *") nptr) #{$nptr = new exponential($i);#})))
+
+(defmethod Exponential -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "exponential *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 Exponential quantile "exponential *")
+(defnmp-accessor/1 Exponential cdf "exponential *")
+(defnmp-accessor/1 Exponential pdf "exponential *")
+(defnmp-accessor-complement/1 Exponential cdf "exponential *")
+(defnmp-accessor/1 Exponential chf "exponential *")
+(defnmp-accessor/1 Exponential hazard "exponential *")
+(defnmp-accessor/0 Exponential kurtosis "exponential *")
+(defnmp-accessor/0 Exponential kurtosis_excess "exponential *")
+(defnmp-accessor/0 Exponential mean "exponential *")
+(defnmp-accessor/0 Exponential median "exponential *")
+(defnmp-accessor/0 Exponential mode "exponential *")
+(defnmp-accessor-complement/1 Exponential quantile "exponential *")
+(defnmp-accessor/0 Exponential skewness "exponential *")
+(defnmp-accessor/0 Exponential standard_deviation "exponential *")
+(defnmp-accessor/0 Exponential variance "exponential *")
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_students_t_dist" '() 
+#{ 
+           #include <boost/math/distributions/exponential.hpp> // for normal_distribution
+           using boost::math::exponential; // typedef provides default type is double.
+#}
+		     (Exponential Exponential -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

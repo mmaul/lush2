@@ -1,0 +1,67 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Beta
+;; Beta Distribution
+;; {<pre>
+;; Slots: alpha:-double-  
+;;           beta:-double-
+;;           dist:-gptr- normal* 
+;; </pre>}
+(defclass Beta object
+  ((-double-) alpha beta )
+  ((-gptr- "beta_dist *") dist))
+
+#? *(new Beta <alpha> <beta>)
+(defmethod Beta Beta (a b)
+  (declare (-double-) a b)
+  (setq alpha a beta b)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "beta_dist *") nptr) #{$nptr = new beta_dist($alpha,$beta);#})))
+
+(defmethod Beta -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "beta_dist *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Beta quantile "beta_dist *")
+(defnmp-accessor/1 Beta cdf "beta_dist *")
+(defnmp-accessor/1 Beta pdf "beta_dist *")
+(defnmp-accessor-complement/1 Beta cdf "beta_dist *")
+(defnmp-accessor/1 Beta chf "beta_dist *")
+(defnmp-accessor/1 Beta hazard "beta_dist *")
+(defnmp-accessor/0 Beta kurtosis "beta_dist *")
+(defnmp-accessor/0 Beta kurtosis_excess "beta_dist *")
+(defnmp-accessor/0 Beta mean "beta_dist *")
+(defnmp-accessor/0 Beta median "beta_dist *")
+(defnmp-accessor/0 Beta mode "beta_dist *")
+(defnmp-accessor-complement/1 Beta quantile "beta_dist *")
+(defnmp-accessor/0 Beta skewness "beta_dist *")
+(defnmp-accessor/0 Beta standard_deviation "beta_dist *")
+(defnmp-accessor/0 Beta variance "beta_dist *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_beta_dist" '() 
+#{ 
+           #include <boost/math/distributions/beta.hpp> // for normal_distribution
+           typedef boost::math::beta_distribution<double> beta_dist;
+           //using boost::math::beta_dist; // typedef provides default type is double.
+#}
+		     (Beta Beta -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+			     )
+		     
+
+)
+  
+)
+

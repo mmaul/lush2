@@ -1,0 +1,59 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * ChiSquared
+;; Chi Squared Distribution
+;; {<pre>
+;; Slots: i:-double-  
+;;           dist:-gptr- chi_squared* 
+;; </pre>}
+(defclass ChiSquared object ((-gptr- "chi_squared *") dist) ((-double-) i))
+
+#? *(new ChiSquared <i>)
+(defmethod ChiSquared ChiSquared (i1)
+  (declare (-double-) i1)
+  (setq i i1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "chi_squared *") nptr) #{$nptr = new chi_squared($i);#})))
+
+(defmethod ChiSquared -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "chi_squared *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 ChiSquared quantile "chi_squared *")
+(defnmp-accessor/1 ChiSquared cdf "chi_squared *")
+(defnmp-accessor/1 ChiSquared pdf "chi_squared *")
+(defnmp-accessor-complement/1 ChiSquared cdf "chi_squared *")
+(defnmp-accessor/1 ChiSquared chf "chi_squared *")
+(defnmp-accessor/1 ChiSquared hazard "chi_squared *")
+(defnmp-accessor/0 ChiSquared kurtosis "chi_squared *")
+(defnmp-accessor/0 ChiSquared kurtosis_excess "chi_squared *")
+(defnmp-accessor/0 ChiSquared mean "chi_squared *")
+(defnmp-accessor/0 ChiSquared median "chi_squared *")
+(defnmp-accessor/0 ChiSquared mode "chi_squared *")
+(defnmp-accessor-complement/1 ChiSquared quantile "chi_squared *")
+(defnmp-accessor/0 ChiSquared skewness "chi_squared *")
+(defnmp-accessor/0 ChiSquared standard_deviation "chi_squared *")
+(defnmp-accessor/0 ChiSquared variance "chi_squared *")
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_students_t_dist" '() 
+#{ 
+           #include <boost/math/distributions/chi_squared.hpp> // for normal_distribution
+           using boost::math::chi_squared; // typedef provides default type is double.
+#}
+		     (ChiSquared ChiSquared -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

@@ -1,0 +1,71 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Cauchy
+;; Cauchy Distribution
+;; {<pre>
+;; Slots: location:-double-  
+;;           scale:-double-
+;;           dist:-gptr- cacuhy* 
+;; </pre>}
+(defclass Cauchy object
+  ((-double-) location  scale )
+  ((-gptr- "cauchy *") dist))
+
+#? *(new cauchy <location> <scale>)
+(defmethod Cauchy Cauchy (l s)
+  (declare (-double-) l s)
+  (setq location l scale s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "cauchy *") nptr) #{$nptr = new cauchy($location,$scale);#})))
+
+(defmethod Cauchy -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "cauchy *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Cauchy quantile "cauchy *")
+(defnmp-accessor/1 Cauchy cdf "cauchy *")
+(defnmp-accessor/1 Cauchy pdf "cauchy *")
+(defnmp-accessor-complement/1 Cauchy cdf "cauchy *")
+(defnmp-accessor/1 Cauchy chf "cauchy *")
+(defnmp-accessor/1 Cauchy hazard "cauchy *")
+;(defnmp-accessor/0 Cauchy kurtosis "cauchy *")
+;(defnmp-accessor/0 Cauchy kurtosis_excess "cauchy *")
+;(defnmp-accessor/0 Cauchy mean "cauchy *")
+(defnmp-accessor/0 Cauchy median "cauchy *")
+(defnmp-accessor/0 Cauchy mode "cauchy *")
+(defnmp-accessor-complement/1 Cauchy quantile "cauchy *")
+;(defnmp-accessor/0 Cauchy skewness "cauchy *")
+(defnmp-accessor/0 Cauchy standard_deviation "cauchy *")
+;(defnmp-accessor/0 Cauchy variance "cauchy *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_cauchy_dist" '() 
+#{ 
+           #include <boost/math/distributions/cauchy.hpp> // for normal_distribution
+           using boost::math::cauchy; // typedef provides default type is double.
+#}
+		     (Cauchy Cauchy -destructor pdf cdf quantile 
+			     ;skewness error: invalid application of sizeof to incomplete type
+			     ;mean 
+			     mode median 
+			     ;standard_deviation
+			     hazard 
+			     ;kurtosis kurtosis_excess 
+			     chf 
+			     ;variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

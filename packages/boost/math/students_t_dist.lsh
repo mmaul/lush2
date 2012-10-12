@@ -1,11 +1,16 @@
-#? ** Wrapper for Boost Student_t Distributions 
-
 (libload "boost/math/dist_util")
-;;(defnamespace boost-math- '())
 (libload "libnum/stats")
 (defvar boost-math-cflags ())
+
+#? * StudentsT
+;; Students_t Distribution
+;; {<pre>
+;; Slots: v:-double-  
+;;           students_t:-gptr- normal* 
+;; </pre>}
 (defclass StudentsT object ((-gptr- "students_t *") dist) ((-double-) v))
 
+#? *(new Normal <v>)
 (defmethod StudentsT StudentsT (vv)
   (declare (-double-) vv)
   (setq v vv)

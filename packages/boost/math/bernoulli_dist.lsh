@@ -1,0 +1,64 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Bernoulli
+;; Bernoulli Distribution
+;; {<pre>
+;; Slots: probability:-double-  
+;;           dist:-gptr- normal* 
+;; </pre>}
+(defclass Bernoulli object
+  ((-double-) probability )
+  ((-gptr- "bernoulli *") dist))
+
+#? *(new Normal <probibility>)
+(defmethod Bernoulli Bernoulli (p)
+  (declare (-double-) p)
+  (setq probability p)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "bernoulli *") nptr) #{$nptr = new bernoulli($probability);#})))
+
+(defmethod Bernoulli -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "bernoulli *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Bernoulli quantile "bernoulli *")
+(defnmp-accessor/1 Bernoulli cdf "bernoulli *")
+(defnmp-accessor/1 Bernoulli pdf "bernoulli *")
+(defnmp-accessor-complement/1 Bernoulli cdf "bernoulli *")
+(defnmp-accessor/1 Bernoulli chf "bernoulli *")
+(defnmp-accessor/1 Bernoulli hazard "bernoulli *")
+(defnmp-accessor/0 Bernoulli kurtosis "bernoulli *")
+(defnmp-accessor/0 Bernoulli kurtosis_excess "bernoulli *")
+(defnmp-accessor/0 Bernoulli mean "bernoulli *")
+(defnmp-accessor/0 Bernoulli median "bernoulli *")
+(defnmp-accessor/0 Bernoulli mode "bernoulli *")
+(defnmp-accessor-complement/1 Bernoulli quantile "bernoulli *")
+(defnmp-accessor/0 Bernoulli skewness "bernoulli *")
+(defnmp-accessor/0 Bernoulli standard_deviation "bernoulli *")
+(defnmp-accessor/0 Bernoulli variance "bernoulli *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_log_bernoulli_dist" '() 
+#{ 
+           #include <boost/math/distributions/bernoulli.hpp> // for normal_distribution
+           using boost::math::bernoulli; // typedef provides default type is double.
+#}
+		     (Bernoulli Bernoulli -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

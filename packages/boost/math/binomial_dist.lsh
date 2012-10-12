@@ -1,0 +1,66 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Binomial
+;; Binomial Distribution
+;; {<pre>
+;; Slots: n:-double-  
+;;           p:-double-
+;;           dist:-gptr- binomial* 
+;; </pre>}
+(defclass Binomial object
+  ((-double-) n p )
+  ((-gptr- "binomial *") dist))
+
+#? *(new Binomial <n> <p>)
+(defmethod Binomial Binomial (n1 p1)
+  (declare (-double-) n1 p1)
+  (setq n n1 p p1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "binomial *") nptr) #{$nptr = new binomial($n,$p);#})))
+
+(defmethod Binomial -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "binomial *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Binomial quantile "binomial *")
+(defnmp-accessor/1 Binomial cdf "binomial *")
+(defnmp-accessor/1 Binomial pdf "binomial *")
+(defnmp-accessor-complement/1 Binomial cdf "binomial *")
+(defnmp-accessor/1 Binomial chf "binomial *")
+(defnmp-accessor/1 Binomial hazard "binomial *")
+(defnmp-accessor/0 Binomial kurtosis "binomial *")
+(defnmp-accessor/0 Binomial kurtosis_excess "binomial *")
+(defnmp-accessor/0 Binomial mean "binomial *")
+(defnmp-accessor/0 Binomial median "binomial *")
+(defnmp-accessor/0 Binomial mode "binomial *")
+(defnmp-accessor-complement/1 Binomial quantile "binomial *")
+(defnmp-accessor/0 Binomial skewness "binomial *")
+(defnmp-accessor/0 Binomial standard_deviation "binomial *")
+(defnmp-accessor/0 Binomial variance "binomial *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_beta_dist" '() 
+#{ 
+           #include <boost/math/distributions/binomial.hpp> // for normal_distribution
+           using boost::math::binomial; // typedef provides default type is double.
+#}
+		     (Binomial Binomial -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+			     )
+		     
+
+)
+  
+)
+

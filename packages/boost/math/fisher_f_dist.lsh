@@ -1,0 +1,66 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * FisherF
+;; Fisher F Distribution
+;; {<pre>
+;; Slots: i:-double-  
+;;           j:-double-
+;;           j:-gptr- fisher_f* 
+;; </pre>}
+(defclass FisherF object
+  ((-double-) i j)
+  ((-gptr- "fisher_f *") dist))
+
+#? *(new FisherF <i> <j>)
+(defmethod FisherF FisherF (i1 j1)
+  (declare (-double-) i1 j1)
+  (setq i i1 j j1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "fisher_f *") nptr) #{$nptr = new fisher_f($i,$j);#})))
+
+(defmethod FisherF -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "fisher_f *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 FisherF quantile "fisher_f *")
+(defnmp-accessor-complement/1 FisherF quantile "fisher_f *")
+(defnmp-accessor/1 FisherF cdf "fisher_f *")
+(defnmp-accessor/1 FisherF pdf "fisher_f *")
+(defnmp-accessor-complement/1 FisherF cdf "fisher_f *")
+(defnmp-accessor/1 FisherF chf "fisher_f *")
+(defnmp-accessor/1 FisherF hazard "fisher_f *")
+(defnmp-accessor/0 FisherF kurtosis "fisher_f *")
+(defnmp-accessor/0 FisherF kurtosis_excess "fisher_f *")
+(defnmp-accessor/0 FisherF mean "fisher_f *")
+(defnmp-accessor/0 FisherF median "fisher_f *")
+(defnmp-accessor/0 FisherF mode "fisher_f *")
+(defnmp-accessor/0 FisherF skewness "fisher_f *")
+(defnmp-accessor/0 FisherF standard_deviation "fisher_f *")
+(defnmp-accessor/0 FisherF variance "fisher_f *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_beta_dist" '() 
+#{ 
+           #include <boost/math/distributions/fisher_f.hpp> // for normal_distribution
+           using boost::math::fisher_f; // typedef provides default type is double.
+#}
+		     (FisherF FisherF -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+			     )
+		     
+
+)
+  
+)
+

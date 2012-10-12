@@ -164,6 +164,8 @@ Current packages include:
 
 #? *** << htmlib/htmlib.hlp
 
+#? *** << boost/math/dist.hlp
+
 #? *** << sn28/sn28.hlp
 
 #? *** << audio/audio.hlp

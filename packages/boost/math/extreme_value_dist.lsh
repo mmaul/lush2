@@ -1,0 +1,66 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * ExtremeValue
+;; Extreme Value Distribution
+;; {<pre>
+;; Slots: alpha:-double-  
+;;           beta:-double-
+;;           dist:-gptr- extreme_value* 
+;; </pre>}
+(defclass ExtremeValue object
+  ((-double-) alpha beta )
+  ((-gptr- "extreme_value *") dist))
+
+#? *(new ExtremeValue <alpha> <beta>)
+(defmethod ExtremeValue ExtremeValue (a b)
+  (declare (-double-) a b)
+  (setq alpha a beta b)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "extreme_value *") nptr) #{$nptr = new extreme_value($alpha,$beta);#})))
+
+(defmethod ExtremeValue -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "extreme_value *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 ExtremeValue quantile "extreme_value *")
+(defnmp-accessor/1 ExtremeValue cdf "extreme_value *")
+(defnmp-accessor/1 ExtremeValue pdf "extreme_value *")
+(defnmp-accessor-complement/1 ExtremeValue cdf "extreme_value *")
+(defnmp-accessor/1 ExtremeValue chf "extreme_value *")
+(defnmp-accessor/1 ExtremeValue hazard "extreme_value *")
+(defnmp-accessor/0 ExtremeValue kurtosis "extreme_value *")
+(defnmp-accessor/0 ExtremeValue kurtosis_excess "extreme_value *")
+(defnmp-accessor/0 ExtremeValue mean "extreme_value *")
+(defnmp-accessor/0 ExtremeValue median "extreme_value *")
+(defnmp-accessor/0 ExtremeValue mode "extreme_value *")
+(defnmp-accessor-complement/1 ExtremeValue quantile "extreme_value *")
+(defnmp-accessor/0 ExtremeValue skewness "extreme_value *")
+(defnmp-accessor/0 ExtremeValue standard_deviation "extreme_value *")
+(defnmp-accessor/0 ExtremeValue variance "extreme_value *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_beta_dist" '() 
+#{ 
+           #include <boost/math/distributions/extreme_value.hpp> // for normal_distribution
+           using boost::math::extreme_value; // typedef provides default type is double.
+#}
+		     (ExtremeValue ExtremeValue -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+			     )
+		     
+
+)
+  
+)
+

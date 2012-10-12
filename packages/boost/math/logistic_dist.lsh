@@ -1,0 +1,67 @@
+(libload "boost/math/dist_util")
+(libload "libnum/stats")
+(defvar boost-math-cflags ())
+
+#? * Logistic
+;; Logistic Distribution
+;; {<pre>
+;; Slots: location:-double-  
+;;           scale:-double-
+;;           dist:-gptr- logistic* 
+;; </pre>}
+(defclass Logistic object
+  ((-double-) location  scale )
+  ((-gptr- "logistic *") dist))
+
+#? *(new Logistic <location> <scale>)
+(defmethod Logistic Logistic (l s)
+  (declare (-double-) l s)
+  (setq location l scale s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "logistic *") nptr) #{$nptr = new logistic($location,$scale);#})))
+
+(defmethod Logistic -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "logistic *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Logistic quantile "logistic *")
+(defnmp-accessor/1 Logistic cdf "logistic *")
+(defnmp-accessor/1 Logistic pdf "logistic *")
+(defnmp-accessor-complement/1 Logistic cdf "logistic *")
+(defnmp-accessor/1 Logistic chf "logistic *")
+(defnmp-accessor/1 Logistic hazard "logistic *")
+(defnmp-accessor/0 Logistic kurtosis "logistic *")
+(defnmp-accessor/0 Logistic kurtosis_excess "logistic *")
+(defnmp-accessor/0 Logistic mean "logistic *")
+(defnmp-accessor/0 Logistic median "logistic *")
+(defnmp-accessor/0 Logistic mode "logistic *")
+(defnmp-accessor-complement/1 Logistic quantile "logistic *")
+(defnmp-accessor/0 Logistic skewness "logistic *")
+(defnmp-accessor/0 Logistic standard_deviation "logistic *")
+(defnmp-accessor/0 Logistic variance "logistic *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_logistic_dist" '() 
+#{ 
+           #include <boost/math/distributions/logistic.hpp> // for normal_distribution
+                              
+           using boost::math::logistic; // typedef provides default type is double.
+#}
+		     (Logistic Logistic -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+			     )
+		     
+
+)
+  
+)
+

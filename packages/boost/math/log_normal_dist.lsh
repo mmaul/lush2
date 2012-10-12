@@ -1,13 +1,19 @@
-#? ** Wrapper for Boost Log Normal Distributions 
-;;(defnamespace boost-math- '())
 (libload "boost/math/dist_util")
 (libload "libnum/stats")
 (defvar boost-math-cflags ())
 
+#? * LogNormal
+;; Log Normal Distribution
+;; {<pre>
+;; Slots: location:-double-  
+;;           scale:-double-
+;;           dist:-gptr- log_normal* 
+;; </pre>}
 (defclass LogNormal object
   ((-double-) location  scale )
   ((-gptr- "lognormal *") dist))
 
+#? *(new LogNormal <location> <scale>)
 (defmethod LogNormal LogNormal (l s)
   (declare (-double-) l s)
   (setq location l scale s)
