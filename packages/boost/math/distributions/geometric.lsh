@@ -1,0 +1,57 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Geometric
+;; Geometric Distribution
+;; {<pre>
+;; Slots: p:-double-  
+;;           geometric:-gptr- geometric * 
+;; </pre>}
+(defclass Geometric object ((-gptr- "geometric *") dist) ((-double-) p))
+
+#? *(new Normal <v>)
+(defmethod Geometric Geometric (p1)
+  (declare (-double-) p1)
+  (setq p p1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "geometric *") nptr) #{$nptr = new geometric($p);#})))
+
+(defmethod Geometric -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "geometric *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 Geometric quantile "geometric *")
+(defnmp-accessor/1 Geometric cdf "geometric *")
+(defnmp-accessor/1 Geometric pdf "geometric *")
+(defnmp-accessor-complement/1 Geometric cdf "geometric *")
+(defnmp-accessor/1 Geometric chf "geometric *")
+(defnmp-accessor/1 Geometric hazard "geometric *")
+(defnmp-accessor/0 Geometric kurtosis "geometric *")
+(defnmp-accessor/0 Geometric kurtosis_excess "geometric *")
+(defnmp-accessor/0 Geometric mean "geometric *")
+(defnmp-accessor/0 Geometric median "geometric *")
+(defnmp-accessor/0 Geometric mode "geometric *")
+(defnmp-accessor-complement/1 Geometric quantile "geometric *")
+(defnmp-accessor/0 Geometric skewness "geometric *")
+(defnmp-accessor/0 Geometric standard_deviation "geometric *")
+(defnmp-accessor/0 Geometric variance "geometric *")
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_students_t_dist" '() 
+#{ 
+           #include <boost/math/distributions/geometric.hpp> // for normal_distribution
+           using boost::math::geometric; // typedef provides default type is double.
+#}
+		     (Geometric Geometric -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

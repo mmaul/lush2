@@ -1,5 +1,4 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * LogNormal

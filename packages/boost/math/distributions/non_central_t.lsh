@@ -1,0 +1,67 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * NonCentralT
+;; NonCentralT Distribution
+;; {<pre>
+;; Slots: v1_:-double-  
+;;           lambda_:-double-
+;;           dist:-gptr- non_central_t* 
+;; </pre>}
+(defclass NonCentralT object
+  ((-double-) v1_ lambda_ )
+  ((-gptr- "non_central_t *") dist))
+
+#? *(new NonCentralT <v1_> <lambda_>)
+(defmethod NonCentralT NonCentralT (v1 lambda1)
+  (declare (-double-) v1 lambda1)
+  (setq v1_ v1 lambda_ lambda1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "non_central_t *") nptr) #{$nptr = new non_central_t($v1_,$lambda_);#})))
+
+(defmethod NonCentralT -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "non_central_t *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 NonCentralT quantile "non_central_t *")
+(defnmp-accessor/1 NonCentralT cdf "non_central_t *")
+(defnmp-accessor/1 NonCentralT pdf "non_central_t *")
+(defnmp-accessor-complement/1 NonCentralT cdf "non_central_t *")
+(defnmp-accessor/1 NonCentralT chf "non_central_t *")
+(defnmp-accessor/1 NonCentralT hazard "non_central_t *")
+(defnmp-accessor/0 NonCentralT kurtosis "non_central_t *")
+(defnmp-accessor/0 NonCentralT kurtosis_excess "non_central_t *")
+(defnmp-accessor/0 NonCentralT mean "non_central_t *")
+(defnmp-accessor/0 NonCentralT median "non_central_t *")
+(defnmp-accessor/0 NonCentralT mode "non_central_t *")
+(defnmp-accessor-complement/1 NonCentralT quantile "non_central_t *")
+(defnmp-accessor/0 NonCentralT skewness "non_central_t *")
+(defnmp-accessor/0 NonCentralT standard_deviation "non_central_t *")
+(defnmp-accessor/0 NonCentralT variance "non_central_t *")
+;    support. return pair
+;    range. returns pair
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_non_central_t" '() 
+#{ 
+           #include <boost/math/distributions/non_central_t.hpp> // for normal_distribution
+           using boost::math::non_central_t; // typedef provides default type is double.
+#}
+		     (NonCentralT NonCentralT -destructor pdf cdf quantile 
+			     skewness 
+			     mean mode median standard_deviation
+			     hazard 
+			     kurtosis kurtosis_excess
+			     chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

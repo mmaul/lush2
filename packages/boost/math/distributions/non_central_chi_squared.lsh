@@ -1,0 +1,67 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * NonCentralChiSquared
+;; NonCentralChiSquared Distribution
+;; {<pre>
+;; Slots: df:-double-  
+;;           lambda_:-double-
+;;           dist:-gptr- non_central_chi_squared* 
+;; </pre>}
+(defclass NonCentralChiSquared object
+  ((-double-) df lambda_ )
+  ((-gptr- "non_central_chi_squared *") dist))
+
+#? *(new NonCentralChiSquared <df> <lambda_>)
+(defmethod NonCentralChiSquared NonCentralChiSquared (df1 lambda1)
+  (declare (-double-) df1 lambda1)
+  (setq df df1 lambda_ lambda1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "non_central_chi_squared *") nptr) #{$nptr = new non_central_chi_squared($df,$lambda_);#})))
+
+(defmethod NonCentralChiSquared -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "non_central_chi_squared *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 NonCentralChiSquared quantile "non_central_chi_squared *")
+(defnmp-accessor/1 NonCentralChiSquared cdf "non_central_chi_squared *")
+(defnmp-accessor/1 NonCentralChiSquared pdf "non_central_chi_squared *")
+(defnmp-accessor-complement/1 NonCentralChiSquared cdf "non_central_chi_squared *")
+(defnmp-accessor/1 NonCentralChiSquared chf "non_central_chi_squared *")
+(defnmp-accessor/1 NonCentralChiSquared hazard "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared kurtosis "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared kurtosis_excess "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared mean "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared median "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared mode "non_central_chi_squared *")
+(defnmp-accessor-complement/1 NonCentralChiSquared quantile "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared skewness "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared standard_deviation "non_central_chi_squared *")
+(defnmp-accessor/0 NonCentralChiSquared variance "non_central_chi_squared *")
+;    support. return pair
+;    range. returns pair
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_non_central_chi_squared_dist" '() 
+#{ 
+           #include <boost/math/distributions/non_central_chi_squared.hpp> // for normal_distribution
+           using boost::math::non_central_chi_squared; // typedef provides default type is double.
+#}
+		     (NonCentralChiSquared NonCentralChiSquared -destructor pdf cdf quantile 
+			      skewness ;- error invalid application of sizeof
+			     mean mode median standard_deviation
+			     hazard 
+			     kurtosis kurtosis_excess
+			     chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

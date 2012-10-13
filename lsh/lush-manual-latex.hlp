@@ -105,6 +105,15 @@ an interface to the Advanced Linux Sound Architecture API (Alsa)
 
 #? *** << video4linux/v4l.hlp
 
+#? *** << pgsql/pgsql.hlp
+
+#? *** << codec/codec.hlp
+
+#? *** << htmlib/htmlib.hlp
+
+#? *** << boost/math/distributions/dist.hlp
+
+
 #? *** BLAS: Basic Linear Algebra Subroutine
 Lush has an interface to the Basic Linear Algebra Subroutines
 library (BLAS). Please refer to the Lush on-line documentation

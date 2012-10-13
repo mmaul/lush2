@@ -1,0 +1,75 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Hypergeometric
+;; Hypergeometric Distribution
+;; {<pre>
+;; Slots: r:-double-  
+;;           n:-double-
+;;           N:-double-
+;;           dist:-gptr- hypergeometric * 
+;; </pre>}
+(defclass Hypergeometric object
+  ((-double-) r n N )
+  ((-gptr- "hypergeometric *") dist))
+
+#? *(new Hypergeometric <mean> <sd>)
+(defmethod Hypergeometric Hypergeometric (r1 n1 N1)
+  (declare (-double-) r1 n1 N1)
+  (setq r r1 n n1 N N1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "hypergeometric *") nptr) #{$nptr = new hypergeometric($r,$n,$N);#})))
+
+(defmethod Hypergeometric -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "hypergeometric *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Hypergeometric quantile "hypergeometric *")
+(defnmp-accessor/1 Hypergeometric cdf "hypergeometric *")
+(defnmp-accessor/1 Hypergeometric pdf "hypergeometric *")
+(defnmp-accessor-complement/1 Hypergeometric cdf "hypergeometric *")
+(defnmp-accessor/1 Hypergeometric chf "hypergeometric *")
+(defnmp-accessor/1 Hypergeometric hazard "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric kurtosis "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric kurtosis_excess "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric mean "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric median "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric mode "hypergeometric *")
+(defnmp-accessor-complement/1 Hypergeometric quantile "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric skewness "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric standard_deviation "hypergeometric *")
+(defnmp-accessor/0 Hypergeometric variance "hypergeometric *")
+;    support. return pair
+;    range. returns pair
+
+
+(defclass HypergeometricVector Hypergeometric
+  ((-idx1- (-double-)) v))
+
+(defmethod HypergeometricVector HypergeometricVector (vec)
+  (declare (-idx1- (-double-)) vec)
+  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
+  (==> this Hypergeometric mean sd)
+)
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_dist" '() 
+#{ 
+           #include <boost/math/distributions/hypergeometric.hpp> // for normal_distribution
+           using boost::math::hypergeometric; // typedef provides default type is double.
+#}
+		     (Hypergeometric Hypergeometric -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

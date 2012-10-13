@@ -1,5 +1,4 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * Beta
@@ -7,7 +6,7 @@
 ;; {<pre>
 ;; Slots: alpha:-double-  
 ;;           beta:-double-
-;;           dist:-gptr- normal* 
+;;           dist:-gptr- beta* 
 ;; </pre>}
 (defclass Beta object
   ((-double-) alpha beta )
@@ -21,7 +20,6 @@
 
 (defmethod Beta -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "beta_dist *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

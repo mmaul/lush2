@@ -1,0 +1,63 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Uniform
+;; Uniform Distribution
+;; {<pre>
+;; Slots: lower:-double-
+;;           upper:-double-  
+;;           dist:-gptr- triangular* 
+;; </pre>}
+(defclass Uniform object
+  ((-double-) lower upper)
+  ((-gptr- "uniform *") dist))
+
+#? *(new Uniform <lower> <upper>)
+(defmethod Uniform Uniform (l u)
+  (declare (-double-) l u)
+  (setq lower l upper u)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "uniform *") nptr) #{$nptr = new uniform($lower,$upper);#})))
+
+(defmethod Uniform -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "uniform *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Uniform quantile "uniform *")
+(defnmp-accessor/1 Uniform cdf "uniform *")
+(defnmp-accessor/1 Uniform pdf "uniform *")
+(defnmp-accessor-complement/1 Uniform cdf "uniform *")
+(defnmp-accessor/1 Uniform chf "uniform *")
+(defnmp-accessor/1 Uniform hazard "uniform *")
+(defnmp-accessor/0 Uniform kurtosis "uniform *")
+(defnmp-accessor/0 Uniform kurtosis_excess "uniform *")
+(defnmp-accessor/0 Uniform mean "uniform *")
+(defnmp-accessor/0 Uniform median "uniform *")
+(defnmp-accessor/0 Uniform mode "uniform *")
+(defnmp-accessor-complement/1 Uniform quantile "uniform *")
+(defnmp-accessor/0 Uniform skewness "uniform *")
+(defnmp-accessor/0 Uniform standard_deviation "uniform *")
+(defnmp-accessor/0 Uniform variance "uniform *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_uniform_dist" '() 
+#{ 
+           #include <boost/math/distributions/uniform.hpp> // for normal_distribution
+           using boost::math::uniform; // typedef provides default type is double.
+#}
+		     (Uniform Uniform -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

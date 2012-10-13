@@ -1,0 +1,68 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * NonCentralF
+;; NonCentralF Distribution
+;; {<pre>
+;; Slots: v1_:-double-  
+;;           v2_:-double-
+;;           lambda_:-double-
+;;           dist:-gptr- non_central_f* 
+;; </pre>}
+(defclass NonCentralF object
+  ((-double-) v1_ v2_ lambda_ )
+  ((-gptr- "non_central_f *") dist))
+
+#? *(new NonCentralF <v1_> <v2_> <lambda_>)
+(defmethod NonCentralF NonCentralF (v1 v2 lambda1)
+  (declare (-double-) v1 v2 lambda1)
+  (setq v1_ v1 v2_ v2 lambda_ lambda1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "non_central_f *") nptr) #{$nptr = new non_central_f($v1_,$v2_,$lambda_);#})))
+
+(defmethod NonCentralF -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "non_central_f *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 NonCentralF quantile "non_central_f *")
+(defnmp-accessor/1 NonCentralF cdf "non_central_f *")
+(defnmp-accessor/1 NonCentralF pdf "non_central_f *")
+(defnmp-accessor-complement/1 NonCentralF cdf "non_central_f *")
+(defnmp-accessor/1 NonCentralF chf "non_central_f *")
+(defnmp-accessor/1 NonCentralF hazard "non_central_f *")
+(defnmp-accessor/0 NonCentralF kurtosis "non_central_f *")
+(defnmp-accessor/0 NonCentralF kurtosis_excess "non_central_f *")
+(defnmp-accessor/0 NonCentralF mean "non_central_f *")
+(defnmp-accessor/0 NonCentralF median "non_central_f *")
+(defnmp-accessor/0 NonCentralF mode "non_central_f *")
+(defnmp-accessor-complement/1 NonCentralF quantile "non_central_f *")
+(defnmp-accessor/0 NonCentralF skewness "non_central_f *")
+(defnmp-accessor/0 NonCentralF standard_deviation "non_central_f *")
+(defnmp-accessor/0 NonCentralF variance "non_central_f *")
+;    support. return pair
+;    range. returns pair
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_non_central_f" '() 
+#{ 
+           #include <boost/math/distributions/non_central_f.hpp> // for normal_distribution
+           using boost::math::non_central_f; // typedef provides default type is double.
+#}
+		     (NonCentralF NonCentralF -destructor pdf cdf quantile 
+			     skewness 
+			     mean mode median standard_deviation
+			     hazard 
+			     kurtosis kurtosis_excess
+			     chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

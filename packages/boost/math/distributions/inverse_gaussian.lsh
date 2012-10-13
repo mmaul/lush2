@@ -1,0 +1,75 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+                         
+#? * InverseGaussian
+;; Inverse Gaussian Distribution
+;; {<pre>
+;; Slots: mean:-double-  
+;;           scale:-double-
+;;           dist:-gptr- inverse_gaussian* 
+;; </pre>}
+(defclass InverseGaussian object
+  ((-double-) mean  scale )
+  ((-gptr- "inverse_gaussian *") dist))
+
+#? *(new InverseGaussian <mean> <sd>)
+(defmethod InverseGaussian InverseGaussian (m s)
+  (declare (-double-) m s)
+  (setq mean m scale s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "inverse_gaussian *") nptr) #{$nptr = new inverse_gaussian($mean,$scale);#})))
+
+(defmethod InverseGaussian -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "inverse_gaussian *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 InverseGaussian quantile "inverse_gaussian *")
+(defnmp-accessor/1 InverseGaussian cdf "inverse_gaussian *")
+(defnmp-accessor/1 InverseGaussian pdf "inverse_gaussian *")
+(defnmp-accessor-complement/1 InverseGaussian cdf "inverse_gaussian *")
+(defnmp-accessor/1 InverseGaussian chf "inverse_gaussian *")
+(defnmp-accessor/1 InverseGaussian hazard "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian kurtosis "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian kurtosis_excess "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian mean "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian median "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian mode "inverse_gaussian *")
+(defnmp-accessor-complement/1 InverseGaussian quantile "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian skewness "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian standard_deviation "inverse_gaussian *")
+(defnmp-accessor/0 InverseGaussian variance "inverse_gaussian *")
+;    support. return pair
+;    range. returns pair
+
+
+(defclass InverseGaussianVector InverseGaussian
+  ((-idx1- (-double-)) v))
+
+(defmethod InverseGaussianVector InverseGaussianVector (vec)
+  (declare (-idx1- (-double-)) vec)
+  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
+  (==> this InverseGaussian mean sd)
+)
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_inverse_gaussian_dist" '() 
+#{ 
+           #include <boost/math/distributions/inverse_gaussian.hpp> // for normal_distribution
+           using boost::math::inverse_gaussian; // typedef provides default type is double.
+#}
+		     (InverseGaussian InverseGaussian -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

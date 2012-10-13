@@ -1,0 +1,57 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * InverseChiSquared
+;; Chi Squared Distribution
+;; {<pre>
+;; Slots: dfi:-double-  
+;;           dist:-gptr- inverse_chi_squared* 
+;; </pre>}
+(defclass InverseChiSquared object ((-gptr- "inverse_chi_squared *") dist) ((-double-) df))
+
+#? *(new InverseChiSquared <df>)
+(defmethod InverseChiSquared InverseChiSquared (df1)
+  (declare (-double-) df1)
+  (setq df df1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "inverse_chi_squared *") nptr) #{$nptr = new inverse_chi_squared($df);#})))
+
+(defmethod InverseChiSquared -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "inverse_chi_squared *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+(defnmp-accessor/1 InverseChiSquared quantile "inverse_chi_squared *")
+(defnmp-accessor/1 InverseChiSquared cdf "inverse_chi_squared *")
+(defnmp-accessor/1 InverseChiSquared pdf "inverse_chi_squared *")
+(defnmp-accessor-complement/1 InverseChiSquared cdf "inverse_chi_squared *")
+(defnmp-accessor/1 InverseChiSquared chf "inverse_chi_squared *")
+(defnmp-accessor/1 InverseChiSquared hazard "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared kurtosis "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared kurtosis_excess "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared mean "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared median "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared mode "inverse_chi_squared *")
+(defnmp-accessor-complement/1 InverseChiSquared quantile "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared skewness "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared standard_deviation "inverse_chi_squared *")
+(defnmp-accessor/0 InverseChiSquared variance "inverse_chi_squared *")
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_inverse_chi_squared_dist" '() 
+#{ 
+           #include <boost/math/distributions/inverse_chi_squared.hpp> // for normal_distribution
+           using boost::math::inverse_chi_squared; // typedef provides default type is double.
+#}
+		     (InverseChiSquared InverseChiSquared -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

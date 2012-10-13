@@ -8,7 +8,6 @@
     (cinline ,(concat " (%s) = " (nameof fn)  "(*(%s),(%s));") r s z)
     r))
 )
-;;#{ $r = quantile (*$s,$z); #}
 (defmacro defnmp-accessor/0 (cls fn ctype)
   `(defmethod ,cls ,fn ()
      (let ((r 0)
@@ -31,8 +30,3 @@
     r))
 )
 
-;(defmethod Normal cdf-complement(x)
-;  (declare (-double-) x)
-;  (let ((r 0)(s :this:dist))(declare (-double-) r) (declare (-gptr- "normal *") s)
-;       #{ $r = cdf(complement(*($s),$z)); #}
-;       r))

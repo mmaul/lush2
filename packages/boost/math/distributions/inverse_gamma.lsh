@@ -1,0 +1,64 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * InverseGamma
+;; Inverse Gamma Distribution
+;; {<pre>
+;; Slots: shp:-double-  
+;;           scale:-double-
+;;           dist:-gptr- inverse_gamma* 
+;; </pre>}
+(defclass InverseGamma object
+  ((-double-) shp  scale )
+  ((-gptr- "inverse_gamma *") dist))
+
+#? *(new InverseGamma <shape> <scale>)
+(defmethod InverseGamma InverseGamma (sh sc)
+  (declare (-double-) sh sc)
+  (setq shp sh scale sc)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "inverse_gamma *") nptr) #{$nptr = new inverse_gamma($shp,$scale);#})))
+
+(defmethod InverseGamma -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "inverse_gamma *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 InverseGamma quantile "inverse_gamma *")
+(defnmp-accessor/1 InverseGamma cdf "inverse_gamma *")
+(defnmp-accessor/1 InverseGamma pdf "inverse_gamma *")
+(defnmp-accessor-complement/1 InverseGamma cdf "inverse_gamma *")
+(defnmp-accessor/1 InverseGamma chf "inverse_gamma *")
+(defnmp-accessor/1 InverseGamma hazard "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma kurtosis "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma kurtosis_excess "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma mean "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma median "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma mode "inverse_gamma *")
+(defnmp-accessor-complement/1 InverseGamma quantile "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma skewness "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma standard_deviation "inverse_gamma *")
+(defnmp-accessor/0 InverseGamma variance "inverse_gamma *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_log_inverse_gamma_dist" '() 
+#{ 
+           #include <boost/math/distributions/inverse_gamma.hpp> // for normal_distribution
+           using boost::math::inverse_gamma; // typedef provides default type is double.
+#}
+		     (InverseGamma InverseGamma -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+ )
+		     
+
+)
+  
+)
+

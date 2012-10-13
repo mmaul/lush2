@@ -1,0 +1,68 @@
+#? *** boost math distribution bindings
+
+Wrapper for boost distribution classes
+
+ Example:
+{<code>
+(libload "boost/math/distributions/normal")
+(defparameter nd1 (new Normal 0 1))
+(==> nd1 cdf .2)
+</code>}
+
+
+#?** << boost/math/distributions/bernoulli_dist.lsh
+
+#?** << boost/math/distributions/beta_dist.lsh
+
+#?** << boost/math/distributions/binomial_dist.lsh
+
+#?** << boost/math/distributions/cauchy_dist.lsh
+
+#?** << boost/math/distributions/chi_squared_dist.lsh
+
+#?** << boost/math/distributions/exponential_dist.lsh
+
+#?** << boost/math/distributions/extreme_value_dist.lsh
+
+#?** << boost/math/distributions/fisher_f_dist.lsh
+
+#?** << boost/math/distributions/logistic_dist.lsh
+
+#?** << boost/math/distributions/bernoulli_dist.lsh
+
+#?** << boost/math/distributions/log_normal_dist.lsh
+
+#?** << boost/math/distributions/normal_dist.lsh
+
+#?** << boost/math/distributions/students_t_dist.lsh
+
+#? ** Common distribution methods
+These methods are defined for all distribution classes.
+Refer to boot documention for details
+{<hlink> http://www.boost.org/doc/libs/1_38_0/libs/math/distributions/doc/sf_and_dist/html/math_toolkit/dist/dist_ref/nmp.html }
+
+#? (==> <dist> quantile <v>)
+
+#? (==> <dist> quantile-complement <v>)
+
+#? (==> <dist> cdf <v>)
+
+#? (==> <dist> cdf-complement <v>)
+
+#? (==> <dist> pdf <v>)
+
+#? (==> <dist> hazard <v>)
+
+#? (==> <dist> kurtosis)
+
+#? (==> <dist> lurtosis_excess)
+
+#? (==> <dist> mean)
+
+#? (==> <dist> median)
+
+#? (==> <dist> mode)
+
+#? (==> <dist> standard-deviation)
+
+#? (==> <dist> variance)

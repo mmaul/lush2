@@ -1,6 +1,4 @@
-(libload "boost/math/dist_util")
-;;(defnamespace boost-math- '())
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * Exponential
@@ -19,7 +17,6 @@
 
 (defmethod Exponential -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "exponential *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

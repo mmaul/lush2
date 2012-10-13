@@ -1,5 +1,4 @@
 (libload "boost/math/dist_util")
-(libload "libnum/stats")
 (defvar boost-math-cflags ())
 
 #? * ExtremeValue
@@ -21,7 +20,6 @@
 
 (defmethod ExtremeValue -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "extreme_value *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

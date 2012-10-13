@@ -1,0 +1,64 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Pareto
+;; Pareto Distribution
+;; {<pre>
+;; Slots: scale:-double-  
+;;           shp:-double-
+;;           dist:-gptr- pareto* 
+;; </pre>}
+(defclass Pareto object
+  ((-double-) scale shp)
+  ((-gptr- "pareto *") dist))
+
+#? *(new Pareto <scale> <shp>)
+(defmethod Pareto Pareto (sc sh)
+  (declare (-double-) sc sh)
+  (setq scale sc shp sh)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "pareto *") nptr) #{$nptr = new pareto($scale,$shp);#})))
+
+(defmethod Pareto -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "pareto *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Pareto quantile "pareto *")
+(defnmp-accessor/1 Pareto cdf "pareto *")
+(defnmp-accessor/1 Pareto pdf "pareto *")
+(defnmp-accessor-complement/1 Pareto cdf "pareto *")
+(defnmp-accessor/1 Pareto chf "pareto *")
+(defnmp-accessor/1 Pareto hazard "pareto *")
+(defnmp-accessor/0 Pareto kurtosis "pareto *")
+(defnmp-accessor/0 Pareto kurtosis_excess "pareto *")
+(defnmp-accessor/0 Pareto mean "pareto *")
+(defnmp-accessor/0 Pareto median "pareto *")
+(defnmp-accessor/0 Pareto mode "pareto *")
+(defnmp-accessor-complement/1 Pareto quantile "pareto *")
+(defnmp-accessor/0 Pareto skewness "pareto *")
+(defnmp-accessor/0 Pareto standard_deviation "pareto *")
+(defnmp-accessor/0 Pareto variance "pareto *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_pareto_dist" '() 
+#{ 
+           #include <boost/math/distributions/pareto.hpp> // for normal_distribution
+           using boost::math::pareto; // typedef provides default type is double.
+#}
+		     (Pareto Pareto -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

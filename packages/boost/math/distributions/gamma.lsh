@@ -1,0 +1,64 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Gamma
+;; Gamma Distribution
+;; {<pre>
+;; Slots: shp:-double-  
+;;           scale:-double-
+;;           dist:-gptr- gamma_distribution<double> * 
+;; </pre>}
+(defclass Gamma object
+  ((-double-) shp  scale )
+  ((-gptr- "gamma_dist *") dist))
+
+#? *(new Gamma <shape> <scale>)
+(defmethod Gamma Gamma (sh sc)
+  (declare (-double-) sh sc)
+  (setq shp sh scale sc)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "gamma_dist *") nptr) #{$nptr = new gamma_dist($shp,$scale);#})))
+
+(defmethod Gamma -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "gamma_dist *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Gamma quantile "gamma_dist *")
+(defnmp-accessor/1 Gamma cdf "gamma_dist *")
+(defnmp-accessor/1 Gamma pdf "gamma_dist *")
+(defnmp-accessor-complement/1 Gamma cdf "gamma_dist *")
+(defnmp-accessor/1 Gamma chf "gamma_dist *")
+(defnmp-accessor/1 Gamma hazard "gamma_dist *")
+(defnmp-accessor/0 Gamma kurtosis "gamma_dist *")
+(defnmp-accessor/0 Gamma kurtosis_excess "gamma_dist *")
+(defnmp-accessor/0 Gamma mean "gamma_dist *")
+(defnmp-accessor/0 Gamma median "gamma_dist *")
+(defnmp-accessor/0 Gamma mode "gamma_dist *")
+(defnmp-accessor-complement/1 Gamma quantile "gamma_dist *")
+(defnmp-accessor/0 Gamma skewness "gamma_dist *")
+(defnmp-accessor/0 Gamma standard_deviation "gamma_dist *")
+(defnmp-accessor/0 Gamma variance "gamma_dist *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_log_normal_dist" '() 
+#{ 
+           #include <boost/math/distributions/gamma.hpp> // for normal_distribution
+           typedef boost::math::gamma_distribution<double> gamma_dist;
+           //using boost::math::gamma; // typedef provides default type is double.
+#}
+		     (Gamma Gamma -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

@@ -1,7 +1,5 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
-
                          
 #? * Normal
 ;; Normal Distribution
@@ -45,17 +43,6 @@
 ;    support. return pair
 ;    range. returns pair
 
-
-(defclass NormalVector Normal
-  ((-idx1- (-double-)) v))
-
-(defmethod NormalVector NormalVector (vec)
-  (declare (-idx1- (-double-)) vec)
-  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
-  (==> this Normal mean sd)
-)
-
-
 (when (not boost-math-cflags)
   (setq boost-math-cflags " -fpermissive"))
 
@@ -69,10 +56,9 @@
 			     skewness mean mode median standard_deviation
 			     hazard kurtosis kurtosis_excess chf variance
 			     cdf-complement quantile-complement
-)
-		     (NormalVector  NormalVector)
+			     )
 
-)
+		     )
   
 )
 

@@ -1,12 +1,11 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * Bernoulli
 ;; Bernoulli Distribution
 ;; {<pre>
 ;; Slots: probability:-double-  
-;;           dist:-gptr- normal* 
+;;           dist:-gptr- bernoulli* 
 ;; </pre>}
 (defclass Bernoulli object
   ((-double-) probability )
@@ -20,7 +19,6 @@
 
 (defmethod Bernoulli -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "bernoulli *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

@@ -1,5 +1,4 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * ChiSquared
@@ -18,7 +17,6 @@
 
 (defmethod ChiSquared -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "chi_squared *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

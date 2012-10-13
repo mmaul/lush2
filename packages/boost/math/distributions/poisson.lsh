@@ -1,0 +1,63 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Poisson
+;; Poisson Distribution
+;; {<pre>
+;; Slots: mean:-double-  
+;;           dist:-gptr- poisson* 
+;; </pre>}
+(defclass Poisson object
+  ((-double-) mean)
+  ((-gptr- "poisson *") dist))
+
+#? *(new Poisson <mean>)
+(defmethod Poisson Poisson (m)
+  (declare (-double-) m)
+  (setq mean m)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "poisson *") nptr) #{$nptr = new poisson($mean);#})))
+
+(defmethod Poisson -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "poisson *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Poisson quantile "poisson *")
+(defnmp-accessor/1 Poisson cdf "poisson *")
+(defnmp-accessor/1 Poisson pdf "poisson *")
+(defnmp-accessor-complement/1 Poisson cdf "poisson *")
+(defnmp-accessor/1 Poisson chf "poisson *")
+(defnmp-accessor/1 Poisson hazard "poisson *")
+(defnmp-accessor/0 Poisson kurtosis "poisson *")
+(defnmp-accessor/0 Poisson kurtosis_excess "poisson *")
+(defnmp-accessor/0 Poisson mean "poisson *")
+(defnmp-accessor/0 Poisson median "poisson *")
+(defnmp-accessor/0 Poisson mode "poisson *")
+(defnmp-accessor-complement/1 Poisson quantile "poisson *")
+(defnmp-accessor/0 Poisson skewness "poisson *")
+(defnmp-accessor/0 Poisson standard_deviation "poisson *")
+(defnmp-accessor/0 Poisson variance "poisson *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_poisson_dist" '() 
+#{ 
+           #include <boost/math/distributions/poisson.hpp> // for normal_distribution
+           using boost::math::poisson; // typedef provides default type is double.
+#}
+		     (Poisson Poisson -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

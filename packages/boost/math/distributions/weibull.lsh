@@ -1,0 +1,63 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Weibull
+;; Weibull Distribution
+;; {<pre>
+;; Slots: scale:-double-  
+;;           shp:-double-
+;;           dist:-gptr- pareto* 
+;; </pre>}
+(defclass Weibull object
+  ((-double-) scale shp)
+  ((-gptr- "weibull *") dist))
+
+#? *(new Weibull <scale> <shp>)
+(defmethod Weibull Weibull (sc sh)
+  (declare (-double-) sc sh)
+  (setq scale sc shp sh)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "weibull *") nptr) #{$nptr = new weibull($scale,$shp);#})))
+
+(defmethod Weibull -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "weibull *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Weibull quantile "weibull *")
+(defnmp-accessor/1 Weibull cdf "weibull *")
+(defnmp-accessor/1 Weibull pdf "weibull *")
+(defnmp-accessor-complement/1 Weibull cdf "weibull *")
+(defnmp-accessor/1 Weibull chf "weibull *")
+(defnmp-accessor/1 Weibull hazard "weibull *")
+(defnmp-accessor/0 Weibull kurtosis "weibull *")
+(defnmp-accessor/0 Weibull kurtosis_excess "weibull *")
+(defnmp-accessor/0 Weibull mean "weibull *")
+(defnmp-accessor/0 Weibull median "weibull *")o
+(defnmp-accessor/0 Weibull mode "weibull *")
+(defnmp-accessor-complement/1 Weibull quantile "weibull *")
+(defnmp-accessor/0 Weibull skewness "weibull *")
+(defnmp-accessor/0 Weibull standard_deviation "weibull *")
+(defnmp-accessor/0 Weibull variance "weibull *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_Weibull_dist" '() 
+#{ 
+           #include <boost/math/distributions/weibull.hpp> // for normal_distribution
+           using boost::math::weibull; // typedef provides default type is double.
+#}
+		     (Weibull Weibull -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

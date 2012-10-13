@@ -1,0 +1,63 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Rayleigh
+;; Rayleigh Distribution
+;; {<pre>
+;; Slots: mean:-double-  
+;;           dist:-gptr- poisson* 
+;; </pre>}
+(defclass Rayleigh object
+  ((-double-) sigma)
+  ((-gptr- "rayleigh *") dist))
+
+#? *(new Rayleigh <sigma>)
+(defmethod Rayleigh Rayleigh (s)
+  (declare (-double-) s)
+  (setq sigma s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "rayleigh *") nptr) #{$nptr = new rayleigh($sigma);#})))
+
+(defmethod Rayleigh -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "rayleigh *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Rayleigh quantile "rayleigh *")
+(defnmp-accessor/1 Rayleigh cdf "rayleigh *")
+(defnmp-accessor/1 Rayleigh pdf "rayleigh *")
+(defnmp-accessor-complement/1 Rayleigh cdf "rayleigh *")
+(defnmp-accessor/1 Rayleigh chf "rayleigh *")
+(defnmp-accessor/1 Rayleigh hazard "rayleigh *")
+(defnmp-accessor/0 Rayleigh kurtosis "rayleigh *")
+(defnmp-accessor/0 Rayleigh kurtosis_excess "rayleigh *")
+(defnmp-accessor/0 Rayleigh mean "rayleigh *")
+(defnmp-accessor/0 Rayleigh median "rayleigh *")
+(defnmp-accessor/0 Rayleigh mode "rayleigh *")
+(defnmp-accessor-complement/1 Rayleigh quantile "rayleigh *")
+(defnmp-accessor/0 Rayleigh skewness "rayleigh *")
+(defnmp-accessor/0 Rayleigh standard_deviation "rayleigh *")
+(defnmp-accessor/0 Rayleigh variance "rayleigh *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_rayleigh_dist" '() 
+#{ 
+           #include <boost/math/distributions/rayleigh.hpp> // for normal_distribution
+           using boost::math::rayleigh; // typedef provides default type is double.
+#}
+		     (Rayleigh Rayleigh -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

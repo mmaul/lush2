@@ -1,0 +1,68 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * NonCentralBeta
+;; NonCentralBeta Distribution
+;; {<pre>
+;; Slots: a_:-double-  
+;;           b_:-double-
+;;           lambda_:-double-
+;;           dist:-gptr- non_central_beta* 
+;; </pre>}
+(defclass NonCentralBeta object
+  ((-double-) a_ b_ lambda_ )
+  ((-gptr- "non_central_beta *") dist))
+
+#? *(new NonCentralBeta <a_> <b_> <lambda_>)
+(defmethod NonCentralBeta NonCentralBeta (a b lambda1)
+  (declare (-double-) a b lambda1)
+  (setq a_ a b_ b lambda_ lambda1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "non_central_beta *") nptr) #{$nptr = new non_central_beta($a_,$b_,$lambda_);#})))
+
+(defmethod NonCentralBeta -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "non_central_beta *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 NonCentralBeta quantile "non_central_beta *")
+(defnmp-accessor/1 NonCentralBeta cdf "non_central_beta *")
+(defnmp-accessor/1 NonCentralBeta pdf "non_central_beta *")
+(defnmp-accessor-complement/1 NonCentralBeta cdf "non_central_beta *")
+(defnmp-accessor/1 NonCentralBeta chf "non_central_beta *")
+(defnmp-accessor/1 NonCentralBeta hazard "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta kurtosis "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta kurtosis_excess "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta mean "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta median "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta mode "non_central_beta *")
+(defnmp-accessor-complement/1 NonCentralBeta quantile "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta skewness "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta standard_deviation "non_central_beta *")
+(defnmp-accessor/0 NonCentralBeta variance "non_central_beta *")
+;    support. return pair
+;    range. returns pair
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_non_central_beta_dist" '() 
+#{ 
+           #include <boost/math/distributions/non_central_beta.hpp> // for normal_distribution
+           using boost::math::non_central_beta; // typedef provides default type is double.
+#}
+		     (NonCentralBeta NonCentralBeta -destructor pdf cdf quantile 
+			     ; skewness - error invalid application of sizeof
+			     mean mode median standard_deviation
+			     hazard 
+			     ; kurtosiskurtosis_excess - error invalid application of sizeof
+			     chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

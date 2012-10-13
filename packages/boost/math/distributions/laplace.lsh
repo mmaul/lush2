@@ -1,0 +1,75 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * Laplace
+;; Laplace Distribution
+;; {<pre>
+;; Slots: location:-double-  
+;;           scale:-double-
+;;           dist:-gptr- laplace* 
+;; </pre>}
+(defclass Laplace object
+  ((-double-) location  scale )
+  ((-gptr- "laplace *") dist))
+
+#? *(new Laplace <mean> <sd>)
+(defmethod Laplace Laplace (l s)
+  (declare (-double-) l s)
+  (setq location l scale s)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "laplace *") nptr) #{$nptr = new laplace($location,$scale);#})))
+
+(defmethod Laplace -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "laplace *") nptr)
+  (print "Freeing dist")
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Laplace quantile "laplace *")
+(defnmp-accessor/1 Laplace cdf "laplace *")
+(defnmp-accessor/1 Laplace pdf "laplace *")
+(defnmp-accessor-complement/1 Laplace cdf "laplace *")
+(defnmp-accessor/1 Laplace chf "laplace *")
+(defnmp-accessor/1 Laplace hazard "laplace *")
+(defnmp-accessor/0 Laplace kurtosis "laplace *")
+(defnmp-accessor/0 Laplace kurtosis_excess "laplace *")
+(defnmp-accessor/0 Laplace mean "laplace *")
+(defnmp-accessor/0 Laplace median "laplace *")
+(defnmp-accessor/0 Laplace mode "laplace *")
+(defnmp-accessor-complement/1 Laplace quantile "laplace *")
+(defnmp-accessor/0 Laplace skewness "laplace *")
+(defnmp-accessor/0 Laplace standard_deviation "laplace *")
+(defnmp-accessor/0 Laplace variance "laplace *")
+;    support. return pair
+;    range. returns pair
+
+
+(defclass LaplaceVector Laplace
+  ((-idx1- (-double-)) v))
+
+(defmethod LaplaceVector LaplaceVector (vec)
+  (declare (-idx1- (-double-)) vec)
+  (setq v vec) (setq mean (stat-mean v)) (setq sd (stat-sd v))
+  (==> this Laplace mean sd)
+)
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_laplace_dist" '() 
+#{ 
+           #include <boost/math/distributions/laplace.hpp> // for normal_distribution
+           using boost::math::laplace; // typedef provides default type is double.
+#}
+		     (Laplace Laplace -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+

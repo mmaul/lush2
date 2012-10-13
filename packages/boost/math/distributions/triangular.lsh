@@ -1,0 +1,64 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+
+#? * Triangular
+;; Triangular Distribution
+;; {<pre>
+;; Slots: lower:-double-
+;;           mode:-double-
+;;           upper:-double-  
+;;           dist:-gptr- triangular* 
+;; </pre>}
+(defclass Triangular object
+  ((-double-) lower mode upper)
+  ((-gptr- "triangular *") dist))
+
+#? *(new Triangular <lower> <mode> <upper>)
+(defmethod Triangular Triangular (l m u)
+  (declare (-double-) l m u)
+  (setq lower l mode m upper u)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "triangular *") nptr) #{$nptr = new triangular($lower,$mode,$upper);#})))
+
+(defmethod Triangular -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "triangular *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 Triangular quantile "triangular *")
+(defnmp-accessor/1 Triangular cdf "triangular *")
+(defnmp-accessor/1 Triangular pdf "triangular *")
+(defnmp-accessor-complement/1 Triangular cdf "triangular *")
+(defnmp-accessor/1 Triangular chf "triangular *")
+(defnmp-accessor/1 Triangular hazard "triangular *")
+(defnmp-accessor/0 Triangular kurtosis "triangular *")
+(defnmp-accessor/0 Triangular kurtosis_excess "triangular *")
+(defnmp-accessor/0 Triangular mean "triangular *")
+(defnmp-accessor/0 Triangular median "triangular *")
+(defnmp-accessor/0 Triangular mode "triangular *")
+(defnmp-accessor-complement/1 Triangular quantile "triangular *")
+(defnmp-accessor/0 Triangular skewness "triangular *")
+(defnmp-accessor/0 Triangular standard_deviation "triangular *")
+(defnmp-accessor/0 Triangular variance "triangular *")
+;    support. return pair
+;    range. returns pair
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_triangular_dist" '() 
+#{ 
+           #include <boost/math/distributions/triangular.hpp> // for normal_distribution
+           using boost::math::triangular; // typedef provides default type is double.
+#}
+		     (Triangular Triangular -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement )
+		     
+
+)
+  
+)
+

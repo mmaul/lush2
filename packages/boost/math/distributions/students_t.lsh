@@ -1,12 +1,11 @@
-(libload "boost/math/dist_util")
-(libload "libnum/stats")
+(libload "boost/math/distributions/dist_util")
 (defvar boost-math-cflags ())
 
 #? * StudentsT
 ;; Students_t Distribution
 ;; {<pre>
 ;; Slots: v:-double-  
-;;           students_t:-gptr- normal* 
+;;           students_t:-gptr- students_t* 
 ;; </pre>}
 (defclass StudentsT object ((-gptr- "students_t *") dist) ((-double-) v))
 
@@ -18,7 +17,6 @@
 
 (defmethod StudentsT -destructor ()
   (let ((nptr :this:dist)) (declare (-gptr- "students_t *") nptr)
-  (print "Freeing dist")
   #{ free($nptr); #}
   ) () )
 

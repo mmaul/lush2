@@ -1,0 +1,64 @@
+(libload "boost/math/distributions/dist_util")
+(defvar boost-math-cflags ())
+                         
+#? * NegativeBinomial
+;; NegativeBinomial Distribution
+;; {<pre>
+;; Slots: r:-double-  
+;;           p:-double-
+;;           dist:-gptr- negative_binomial* 
+;; </pre>}
+(defclass NegativeBinomial object
+  ((-double-) r p )
+  ((-gptr- "negative_binomial *") dist))
+
+#? *(new NegativeBinomial <r> <p>)
+(defmethod NegativeBinomial NegativeBinomial (r1 p1)
+  (declare (-double-) r1 p1)
+  (setq r r1 p p1)
+  (setq dist (let ((nptr (to-gptr ()))) (declare (-gptr- "negative_binomial *") nptr) #{$nptr = new negative_binomial($r,$p);#})))
+
+(defmethod NegativeBinomial -destructor ()
+  (let ((nptr :this:dist)) (declare (-gptr- "negative_binomial *") nptr)
+  #{ free($nptr); #}
+  ) () )
+
+; common distribution methods
+(defnmp-accessor/1 NegativeBinomial quantile "negative_binomial *")
+(defnmp-accessor/1 NegativeBinomial cdf "negative_binomial *")
+(defnmp-accessor/1 NegativeBinomial pdf "negative_binomial *")
+(defnmp-accessor-complement/1 NegativeBinomial cdf "negative_binomial *")
+(defnmp-accessor/1 NegativeBinomial chf "negative_binomial *")
+(defnmp-accessor/1 NegativeBinomial hazard "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial kurtosis "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial kurtosis_excess "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial mean "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial median "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial mode "negative_binomial *")
+(defnmp-accessor-complement/1 NegativeBinomial quantile "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial skewness "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial standard_deviation "negative_binomial *")
+(defnmp-accessor/0 NegativeBinomial variance "negative_binomial *")
+;    support. return pair
+;    range. returns pair
+
+
+(when (not boost-math-cflags)
+  (setq boost-math-cflags " -fpermissive"))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags boost-math-cflags)))
+  (dhc-make-with-c++ "boost_math_negative_binomial_dist" '() 
+#{ 
+           #include <boost/math/distributions/negative_binomial.hpp> // for normal_distribution
+           using boost::math::negative_binomial; // typedef provides default type is double.
+#}
+		     (NegativeBinomial NegativeBinomial -destructor pdf cdf quantile 
+			     skewness mean mode median standard_deviation
+			     hazard kurtosis kurtosis_excess chf variance
+			     cdf-complement quantile-complement
+)
+
+)
+  
+)
+
