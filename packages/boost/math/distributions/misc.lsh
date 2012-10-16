@@ -1,0 +1,3 @@
+(defun se-mean (sd n)
+  (declare -double- sn n)
+  (/ sd (sqrt n)))

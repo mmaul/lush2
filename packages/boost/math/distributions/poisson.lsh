@@ -39,8 +39,9 @@
 (defnmp-accessor/0 Poisson skewness "poisson *")
 (defnmp-accessor/0 Poisson standard_deviation "poisson *")
 (defnmp-accessor/0 Poisson variance "poisson *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 Poisson support "poisson *")
+(defnmp-pair-accessor/0 Poisson range "poisson *")
+
 
 (when (not boost-math-cflags)
   (setq boost-math-cflags " -fpermissive"))
@@ -54,7 +55,8 @@
 		     (Poisson Poisson -destructor pdf cdf quantile 
 			     skewness mean mode median standard_deviation
 			     hazard kurtosis kurtosis_excess chf variance
-			     cdf-complement quantile-complement )
+			     cdf-complement quantile-complement 
+			     support range)
 		     
 
 )

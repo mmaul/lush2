@@ -40,8 +40,9 @@
 (defnmp-accessor/0 InverseGaussian skewness "inverse_gaussian *")
 (defnmp-accessor/0 InverseGaussian standard_deviation "inverse_gaussian *")
 (defnmp-accessor/0 InverseGaussian variance "inverse_gaussian *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 InverseGaussian support "inverse_gaussian *")
+(defnmp-pair-accessor/0 InverseGaussian range "inverse_gaussian *")
+
 
 
 (defclass InverseGaussianVector InverseGaussian
@@ -67,7 +68,7 @@
 			     skewness mean mode median standard_deviation
 			     hazard kurtosis kurtosis_excess chf variance
 			     cdf-complement quantile-complement
-)
+			     support range)
 
 )
   

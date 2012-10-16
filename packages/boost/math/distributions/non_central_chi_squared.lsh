@@ -39,8 +39,9 @@
 (defnmp-accessor/0 NonCentralChiSquared skewness "non_central_chi_squared *")
 (defnmp-accessor/0 NonCentralChiSquared standard_deviation "non_central_chi_squared *")
 (defnmp-accessor/0 NonCentralChiSquared variance "non_central_chi_squared *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 NonCentralChiSquared support "non_central_chi_squared *")
+(defnmp-pair-accessor/0 NonCentralChiSquared range "non_central_chi_squared *")
+
 
 
 (when (not boost-math-cflags)
@@ -59,7 +60,7 @@
 			     kurtosis kurtosis_excess
 			     chf variance
 			     cdf-complement quantile-complement
-)
+			     support range)
 
 )
   

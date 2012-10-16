@@ -39,8 +39,9 @@
 (defnmp-accessor/0 InverseGamma skewness "inverse_gamma *")
 (defnmp-accessor/0 InverseGamma standard_deviation "inverse_gamma *")
 (defnmp-accessor/0 InverseGamma variance "inverse_gamma *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 InverseGamma support "inverse_gamma *")
+(defnmp-pair-accessor/0 InverseGamma range "inverse_gamma *")
+
 
 (when (not boost-math-cflags)
   (setq boost-math-cflags " -fpermissive"))
@@ -55,7 +56,7 @@
 			     skewness mean mode median standard_deviation
 			     hazard kurtosis kurtosis_excess chf variance
 			     cdf-complement quantile-complement
- )
+			     support range)
 		     
 
 )

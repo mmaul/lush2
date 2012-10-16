@@ -39,8 +39,9 @@
 (defnmp-accessor/0 Beta skewness "beta_dist *")
 (defnmp-accessor/0 Beta standard_deviation "beta_dist *")
 (defnmp-accessor/0 Beta variance "beta_dist *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 Beta support "beta_dist *")
+(defnmp-pair-accessor/0 Beta range "beta_dist *")
+
 
 (when (not boost-math-cflags)
   (setq boost-math-cflags " -fpermissive"))
@@ -56,7 +57,7 @@
 			     skewness mean mode median standard_deviation
 			     hazard kurtosis kurtosis_excess chf variance
 			     cdf-complement quantile-complement
-			     )
+			     support range)
 		     
 
 )

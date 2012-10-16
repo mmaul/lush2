@@ -40,8 +40,9 @@
 (defnmp-accessor/0 NonCentralBeta skewness "non_central_beta *")
 (defnmp-accessor/0 NonCentralBeta standard_deviation "non_central_beta *")
 (defnmp-accessor/0 NonCentralBeta variance "non_central_beta *")
-;    support. return pair
-;    range. returns pair
+(defnmp-pair-accessor/0 NonCentralBeta support "non_central_beta *")
+(defnmp-pair-accessor/0 NonCentralBeta range "non_central_beta *")
+
 
 
 (when (not boost-math-cflags)
@@ -60,7 +61,7 @@
 			     ; kurtosiskurtosis_excess - error invalid application of sizeof
 			     chf variance
 			     cdf-complement quantile-complement
-)
+			     support range)
 
 )
   
