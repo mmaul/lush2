@@ -162,6 +162,8 @@ Current packages include:
 
 #? *** << codec/codec.hlp
 
+#? *** << io/io.hlp
+
 #? *** << htmlib/htmlib.hlp
 
 #? *** << boost/math/distributions/dist.hlp

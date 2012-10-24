@@ -1,0 +1,144 @@
+#? *** Readers
+;; Classes for reading of input
+
+
+(defvar lz
+ (let ((lib (find-shared-or-static-library "libz")))
+    (if (and lib (filep lib))
+   lib
+       (error "unable to find libz"))))
+#? * BufferedReader
+;; Base class for buffered readers implements buffer as IDX of ubyte
+(defclass BufferedReader object
+ ((-idx1- (-ubyte-)) buffer)
+ ((-int-) sz)
+ ((-int-) bsz)
+ )
+
+(defmethod BufferedReader BufferedReader (bufsz)
+ (declare (-int-) bufsz)
+ (setq sz bufsz)
+ (setq bsz 0)
+ (setq buffer (ubyte-array bufsz))
+
+ ()))
+
+(defmethod BufferedReader read ()
+  bsz)
+
+(defmethod BufferedReader -destructor ()
+ ()
+)
+
+
+(defmethod BufferedReader read ()
+ sz)
+
+#? * BufferedFileReader
+;; Applicaiton of BufferedReader on files
+(defclass BufferedFileReader BufferedReader
+ ((-str-) filename)
+ ((-gptr- "FILE *") fptr)
+ )
+
+#? * (BufferedFileReader <filename> <buffer size>)
+(defmethod BufferedFileReader BufferedFileReader (filenm bsize)
+ (declare (-str-) filenm)
+ (declare (-int-) bsize)
+ (==> this BufferedReader bsize)
+ (setq filename filenm)
+ #{ $fptr = fopen($filename,"r"); #}
+ ())
+
+(defmethod BufferedFileReader -destructor ()
+  #{ fclose($fptr); #}
+  ())
+
+#? (==> read <cls>)
+; reads from file into buffer returning bytes read
+;; Decompressed data can be accessed in <buffer> slot
+; if EOF bytes read is 0
+(defmethod BufferedFileReader read ()
+ (let ((bszt 0))
+    (declare (-int-) bszt)
+    (array-clear buffer 0)
+    #{ $bszt = fread(IDX_PTR($buffer,unsigned char),1,$sz,$fptr); #}
+    (setq bsz bszt)))
+
+#? * GzReader
+; Application of BufferedReader to Gzip'd data
+(defclass GzReader BufferedReader
+  ((-obj- (BufferedReader)) reader)
+;  ((-idx1- (-ubyte-)) buffer)
+;  ((-int-) sz)
+;  ((-int-) bsz)
+  ((-int-) blen)
+  ((-int-) initst)
+  ((-int-) err)
+  ((-gptr- "z_stream *") strm))
+
+#? * (new GzReader <Buffered Reader>)
+; Decompresses gzip'd data supplied by <Buffered Reader>
+(defmethod GzReader GzReader (rdr)
+  (declare (-obj- (BufferedReader)) rdr)
+  (setq reader rdr)
+  (setq sz (* :rdr:sz 5))
+  (setq bsz 0)
+  (setq buffer (ubyte-array sz))
+  #{ $strm = (z_stream *)malloc(sizeof(z_stream));
+     $strm->zalloc = Z_NULL;
+     $strm->zfree = Z_NULL;
+     $strm->opaque = Z_NULL;
+     $strm->avail_in = 0;
+     $strm->total_out = 0;
+     $strm->next_in = Z_NULL;
+     $initst = inflateInit2($strm, (16+MAX_WBITS));//inflateInit($strm);
+   #}
+   ()
+ )
+
+(defmethod GzReader -destructor ()
+  #{ if($err == Z_STREAM_END) {
+       inflateEnd($strm);
+     }
+     free($strm);
+  #}
+  ()
+)
+
+#? (==> read <GzReader>)
+;; Returns number decompressed or 0 one End of Stream
+;; Decompressed data can be accessed in <buffer> slot
+(defmethod GzReader read ()
+  (let ((bin (==> reader read))
+    (in_buf :reader:buffer)
+  )
+  (declare (-idx1- (-ubyte-)) in_buf)
+  (declare (-int-) sz)
+   #{
+      $strm->next_in  = IDX_PTR($in_buf,unsigned char);
+      $strm->avail_in = (uInt)$bin;
+      $strm->next_out = IDX_PTR($buffer,unsigned char);
+      $strm->avail_out = (uInt)$sz;
+      $err = inflate($strm,  Z_SYNC_FLUSH);
+      $bsz = $strm->total_out;
+      $blen = $sz - $strm->avail_out;
+    #}
+    blen)
+ )
+
+
+;  (libload "gz_reader")
+; (defparameter bfr2 (new BufferedFileReader "Makefile.1.gz" 1024))
+; (defparameter gzr (new GzReader bfr2))
+; (==> gzr read)
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
+(dhc-make-with-c++ "gz_reader" (list  lz)
+#{
+ #include "zlib.h"  
+ #include "zconf.h"  
+#}
+ (BufferedReader BufferedReader -destructor read)
+ (BufferedFileReader BufferedFileReader -destructor read)
+ (GzReader GzReader -destructor read)
+))
