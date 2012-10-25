@@ -1,3 +1,5 @@
 #? **** io: Input/Output Libraries
 
 #? *** << io/reader.lsh
+
+#? *** << io/iterator.lsh

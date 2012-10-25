@@ -1,0 +1,97 @@
+#? *** Iterators
+;;
+
+(libload "io/reader")
+
+#? ** Idx1UbyteLineIterator
+;; Iteratates over lines contained 
+;;
+;; Example: {<pre>
+;; (defparameter bfr2 (new BufferedFileReader "Makefile.1.gz" 1024))
+;; (defparameter gzr (new GzReader bfr2))
+;; (==> gzr read)
+;; (defparameter li (new Idx1UbyteLineIterator :gzr:buffer :gzr:bsz))
+;; </pre>}
+
+(defclass Idx1UbyteLineIterator object
+  ((-idx1- (-ubyte-)) buffer)
+  ((-int-) bsz)
+  ((-int-) i)
+  ((-int-) l)
+  ((-int-) sep)
+)
+
+#? * (new Idx1UbyteLineIterator <(-idx1- (-ubyte-)) buffer> <size of content>)
+(defmethod Idx1UbyteLineIterator Idx1UbyteLineIterator (buff sz)
+  (declare (-idx1- (-ubyte-)) buff)
+  (declare (-int-) sz)
+  (setq buffer buff)
+  (setq bsz sz)
+  (setq sep 10)
+  (==> this reset))
+
+(defmethod Idx1UbyteLineIterator reset ()
+  (setq i 0) (setq l 0))
+
+#? * (==> <Idx1UbyteLineIterator> set-separtor <sep char code>)
+;; Change default seperator from \n to something else
+(defmethod Idx1UbyteLineIterator set-separator (s)
+  (declare (-int-) s)
+  (setq sep s))
+
+#? * (==> <Idx1UbyteLineIterator> next)
+;; Returns <(-idx1- (-ubyte-)> containg content from start of buffer upto occurance of
+;; <sep> or last occurance of <sep> up to occurance of <sep> returns empty idx1 
+;; upon exhaustion of buffer
+(defmethod Idx1UbyteLineIterator next ()
+  (let ((done ())
+	(ret [u])
+	)
+    (declare (-bool-) done)
+    (declare (-idx1- (-ubyte-)) ret)
+    ;(declare (-str-) ret)
+    (while (and (< i bsz)  (not done))
+      (when (= (buffer i) sep)
+	;(print i l)
+	;((idx-trim buffer 0 l i) (- (- i l) 1) 0)
+	(setq ret  (idx-trim buffer 0 l  (- i l) ) )
+	;(print l i)
+	(setq l  (+ i 1))
+	(setq i (+ 1 i))
+	(setq done t)
+	)
+      (setq i (+ i 1)))
+    ret))
+
+#? * (==> <Idx1UbyteLineIterator> nextn <nth>)
+;; Returns <(-idx1- (-ubyte-)> containg  content after <nth> occurance of <sep> 
+;; upto occurance of <sep>  returns empty idx1 upon exhaustion of buffer
+(defmethod Idx1UbyteLineIterator nextn (nth)
+  (declare (-int-) nth)
+  (let ((done ())
+	(ret [u])
+	(ith 0))
+    (declare (-bool-) done)
+    (declare (-idx1- (-ubyte-)))
+    (declare (-int-) ith)
+    (while (and (< i bsz)  (not done))
+      (when (= (buffer i) sep)
+	;((idx-trim buffer 0 l i)  (- i l) 0)
+	(setq ret  (idx-trim buffer 0 l  (- i l) ) )
+	(setq l  (+ i 1))
+	(setq i (+ 1 i))
+	(when (or (not (to-bool nth)) (< nth ith)) 
+	  (setq done t))
+	(setq ith (+ ith 1))
+	)
+      (setq i (+ i 1)))
+    ret))
+
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
+(dhc-make-with-c++ "iterator" ()
+#{
+
+#}
+ (Idx1UbyteLineIterator reset Idx1UbyteLineIterator set-separator next nextn)
+))

@@ -144,7 +144,7 @@
 (defmethod GzReader GzReader (rdr)
   (declare (-obj- (BufferedReader)) rdr)
   (setq reader rdr)
-  (setq sz (* :rdr:sz 5))
+  (setq sz (* :rdr:sz 10))
   (setq bsz 0)
   (setq buffer (ubyte-array sz))
   #{ $strm = (z_stream *)malloc(sizeof(z_stream));
@@ -178,9 +178,10 @@
 (defmethod GzReader read ()
   (let ((bin (==> reader read))
     (in_buf :reader:buffer)
+    (wtf 0)
   )
   (declare (-idx1- (-ubyte-)) in_buf)
-  (declare (-int-) sz)
+  (declare (-int-) sz wtf)
    #{
       $strm->next_in  = IDX_PTR($in_buf,unsigned char);
       $strm->avail_in = (uInt)$bin;
@@ -189,9 +190,30 @@
       $err = inflate($strm,  Z_SYNC_FLUSH);
       $bsz = $strm->total_out;
       $blen = $sz - $strm->avail_out;
+      $wtf = $strm->avail_out;
     #}
+  ;(print sz bsz blen wtf)
     blen)
  )
+
+;; ------------------------------------
+#? * (==> <BufferedReader> to-string)
+;; Returns string view of buffer's content
+(defun idx1-ubyte-string-view (dx)
+  (declare (-idx1- (-ubyte-)) dx)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret = (char *)IDX_PTR($dx,unsigned char); #}
+    ret))
+
+#? * (==> <BufferedReader> to-string)
+;; Returns string view of buffer's content
+(defun idx1-ubyte-string-view-n (dx n)
+  (declare (-idx1- (-ubyte-)) dx)
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret = (char *)IDX_PTR($dx,unsigned char); #}
+    ret))
 
 
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
@@ -203,4 +225,5 @@
  (BufferedReader BufferedReader -destructor read to-string)
  (BufferedFileReader BufferedFileReader -destructor read)
  (GzReader GzReader -destructor read)
+ idx1-ubyte-string-view
 ))
