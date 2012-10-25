@@ -1,3 +1,26 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; io/readers package for LUSH Lisp Universal Shell
+;;;   Copyright (C) 2012 Mike Maul
+;;;
+;;; This program is free software; you can redistribute it and/or modify
+;;; it under the terms of the GNU Lesser General Public License as 
+;;; published by the Free Software Foundation; either version 2.1 of the
+;;; License, or (at your option) any later version.
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU Lesser General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General Public
+;;; License along with this program; if not, write to the Free Software
+;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+;;; MA 02110-1301  USA
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 #? *** Readers
 ;; Classes for reading of input
 
@@ -7,14 +30,25 @@
     (if (and lib (filep lib))
    lib
        (error "unable to find libz"))))
-#? * BufferedReader
+#? ** BufferedReader
 ;; Base class for buffered readers implements buffer as IDX of ubyte
+
+#? * Slots
+#? ((-idx1- (-ubyte-)) buffer)
+;; Content returned from <read>
+#? ((-int-) sz)
+;; Length of buffer
+#? ((-int-) bsz)
+;; Length of data in <buffer>
+
 (defclass BufferedReader object
  ((-idx1- (-ubyte-)) buffer)
  ((-int-) sz)
  ((-int-) bsz)
  )
 
+#? * (new BufferedReader <buffer size>)
+;;
 (defmethod BufferedReader BufferedReader (bufsz)
  (declare (-int-) bufsz)
  (setq sz bufsz)
@@ -23,41 +57,52 @@
 
  ()))
 
-(defmethod BufferedReader read ()
-  bsz)
-
 (defmethod BufferedReader -destructor ()
  ()
 )
 
-
+#? * (==> <BufferedReader> read)
+;; Dummy method, to be implemented by descendants
 (defmethod BufferedReader read ()
- sz)
+   bsz)
 
-#? * BufferedFileReader
-;; Applicaiton of BufferedReader on files
+#? * (==> <BufferedReader> to-string)
+;; Returns string view of buffer's content
+(defmethod BufferedReader to-string ()
+  (let ((ret ""))
+    (declare (-str-) ret)
+    #{ $ret = (char *)IDX_PTR($buffer,unsigned char); #}
+    ret))
+
+#? ** BufferedFileReader BufferedReader
+;; Subclass of BufferedReader for reading files
+
+#? * Slots
+#? ((-str-) filename)
+
 (defclass BufferedFileReader BufferedReader
  ((-str-) filename)
  ((-gptr- "FILE *") fptr)
  )
 
-#? * (BufferedFileReader <filename> <buffer size>)
+#? * (new BufferedFileReader <filename> <buffer size>)
+;;
 (defmethod BufferedFileReader BufferedFileReader (filenm bsize)
- (declare (-str-) filenm)
- (declare (-int-) bsize)
- (==> this BufferedReader bsize)
- (setq filename filenm)
- #{ $fptr = fopen($filename,"r"); #}
- ())
+   (declare (-str-) filenm)
+   (declare (-int-) bsize)
+   (==> this BufferedReader bsize)
+   (setq filename filenm)
+   #{ $fptr = fopen($filename,"r"); #}
+   ())
 
 (defmethod BufferedFileReader -destructor ()
   #{ fclose($fptr); #}
   ())
 
-#? (==> read <cls>)
-; reads from file into buffer returning bytes read
+#? * (==> read <cls>)
+;; reads from file into buffer returning bytes read
 ;; Decompressed data can be accessed in <buffer> slot
-; if EOF bytes read is 0
+;; if EOF bytes read is 0
 (defmethod BufferedFileReader read ()
  (let ((bszt 0))
     (declare (-int-) bszt)
@@ -65,13 +110,30 @@
     #{ $bszt = fread(IDX_PTR($buffer,unsigned char),1,$sz,$fptr); #}
     (setq bsz bszt)))
 
-#? * GzReader
-; Application of BufferedReader to Gzip'd data
+#? * (==> to-string)
+;; Inherited from BufferReader
+;; Returns string view of buffer
+
+
+#? ** GzReader BufferedReader
+;; Application of BufferedReader to Gzip'd data
+;; Example: {<pre>
+;; (libload "gz_reader")
+;; (defparameter bfr2 (new BufferedFileReader "Makefile.1.gz" 1024))
+;; (defparameter gzr (new GzReader bfr2))
+;; (==> gzr read)
+;; </pre>}
+
+#? * Slots
+#?  ((-int-) blen)
+;; Length of buffer (5x size of source<BuffereddRreader> buffer)
+#?  ((-int-) initst)
+;; Result code of inflateInit2
+#?  ((-int-) err)
+;; Result code of inflate
+
 (defclass GzReader BufferedReader
   ((-obj- (BufferedReader)) reader)
-;  ((-idx1- (-ubyte-)) buffer)
-;  ((-int-) sz)
-;  ((-int-) bsz)
   ((-int-) blen)
   ((-int-) initst)
   ((-int-) err)
@@ -97,6 +159,10 @@
    ()
  )
 
+#? * (==> to-string)
+;; Inherited from BufferReader
+;; Returns string view of buffer
+
 (defmethod GzReader -destructor ()
   #{ if($err == Z_STREAM_END) {
        inflateEnd($strm);
@@ -106,7 +172,7 @@
   ()
 )
 
-#? (==> read <GzReader>)
+#? * (==> read <GzReader>)
 ;; Returns number decompressed or 0 one End of Stream
 ;; Decompressed data can be accessed in <buffer> slot
 (defmethod GzReader read ()
@@ -128,17 +194,13 @@
  )
 
 
-;  (libload "gz_reader")
-; (defparameter bfr2 (new BufferedFileReader "Makefile.1.gz" 1024))
-; (defparameter gzr (new GzReader bfr2))
-; (==> gzr read)
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
 (dhc-make-with-c++ "gz_reader" (list  lz)
 #{
  #include "zlib.h"  
  #include "zconf.h"  
 #}
- (BufferedReader BufferedReader -destructor read)
+ (BufferedReader BufferedReader -destructor read to-string)
  (BufferedFileReader BufferedFileReader -destructor read)
  (GzReader GzReader -destructor read)
 ))
