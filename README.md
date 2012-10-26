@@ -23,8 +23,10 @@ Enhancements in progress:
 
 News:
 * Updated datagetter.lsh for loading quotes from Yahoo Finance into Arrays
-* Added BufferedReader classes
-*       Including gzip reader
+* Added BufferedReader 
+* Added BufferedFileReader
+* Added GzipReader
+* Added syslog
 
 Planned enhancements:
 ZeroMQ bindings

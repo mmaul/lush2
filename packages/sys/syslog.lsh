@@ -1,0 +1,140 @@
+
+#? *** Syslog
+;; Example
+;; {<pre>
+;; (setlogmask (LOG_UPTO (LOG_NOTICE)))
+;; (openlog "lush2"  (bitor (LOG_CONS) (bitor (LOG_PID) (LOG_NDELAY))) (LOG_LOCAL1))
+;; (syslog (LOG_INFO) "Logging from lush!!!")
+;; </pre>}
+
+(defmacro def-int-cval (d)
+`(defun ,d ()
+  (let ((v 0))
+    (declare (-int-) v)
+    (cinline ,(concat " (%s) = " (nameof d)  ";") v)
+    v))
+)
+(defmacro def-int-callcfun/1 (d)
+`(defun LOG_UPTO (mask)
+  (declare (-int-) mask)
+  (let ((v 0))
+    (declare (-int-) v)
+    (cinline ,(concat " (%s) = "(nameof d)  " ( (%s) );") v mask)
+    v))
+)
+
+#? ** Options
+#? * (LOG_CONS)
+(def-int-cval LOG_CONS)
+#? * (LOG_NDELAY)
+(def-int-cval LOG_NDELAY)
+#? * (LOG_NOWAIT)
+(def-int-cval LOG_NOWAIT)
+#? * (LOG_ODELAY)
+(def-int-cval LOG_ODELAY)
+#? * (LOG_PERROR)
+(def-int-cval LOG_PERROR)
+#? * (LOG_PID)
+(def-int-cval LOG_PID)
+
+#? ** Facilities
+#? * (LOG_AUTH)
+(def-int-cval LOG_AUTH)
+#? * (LOG_AUTHPRIV)
+(def-int-cval LOG_AUTHPRIV)
+#? * (LOG_CRON)
+(def-int-cval LOG_CRON)
+#? * (LOG_DAEMON)
+(def-int-cval LOG_DAEMON)
+#? * (LOG_FTP)
+(def-int-cval LOG_FTP)
+#? * (LOG_KERN)
+(def-int-cval LOG_KERN)
+#? * (LOG_LOCAL0)
+(def-int-cval LOG_LOCAL0)
+#? * (LOG_LOCAL1)
+(def-int-cval LOG_LOCAL1)
+#? * (LOG_LOCAL2)
+(def-int-cval LOG_LOCAL2)
+#? * (LOG_LOCAL3)
+(def-int-cval LOG_LOCAL3)
+#? * (LOG_LOCAL4)
+(def-int-cval LOG_LOCAL4)
+#? * (LOG_LOCAL5)
+(def-int-cval LOG_LOCAL5)
+#? * (LOG_LOCAL6)
+(def-int-cval LOG_LOCAL6)
+#? * (LOG_LOCAL7)
+(def-int-cval LOG_LOCAL7)
+#? * (LOG_LPR)
+(def-int-cval LOG_LPR)
+#? * (LOG_MAIL)
+(def-int-cval LOG_MAIL)
+#? * (LOG_NEWS)
+(def-int-cval LOG_NEWS)
+#? * (LOG_SYSLOG)
+(def-int-cval LOG_SYSLOG)
+#? * (LOG_USER) 
+(def-int-cval LOG_USER)
+#? * (LOG_UUCP) 
+(def-int-cval LOG_UUCP)
+
+#? ** Levels
+#? * (LOG_EMERG)
+(def-int-cval LOG_EMERG)
+#? * (LOG_ALERT)
+(def-int-cval LOG_ALERT)
+#? * (LOG_CRIT)
+(def-int-cval LOG_CRIT)
+#? * (LOG_ERR)
+(def-int-cval LOG_ERR)
+#? * (LOG_WARNING)
+(def-int-cval LOG_WARNING)
+#? * (LOG_NOTICE)
+(def-int-cval LOG_NOTICE)
+#? * (LOG_INFO)
+(def-int-cval LOG_INFO)
+#? * (LOG_DEBUG)
+(def-int-cval LOG_DEBUG)
+#? * (LOG_UPTO <level>)
+(def-int-callcfun/1 LOG_UPTO)
+
+#? * (setlogmask <level>)
+(defun setlogmask (level)
+  (declare (-int-) level)
+  #{setlogmask($level);#}
+  ())
+
+#? * (openlog <ident> <option> <facility>)
+(defun openlog (ident option facility)
+  (declare (-str-) ident)
+  (declare (-int-) option facility)
+  #{ openlog($ident,$option,$facility); #}
+  ())
+
+#? * (syslog <priority> <message>)
+(defun syslog (priority message)
+  (declare (-int-) priority)
+  (declare (-str-) message)
+  #{syslog($priority,"%s",$message);#}
+  ())
+
+#? * (closelog)
+(defun closelog ()
+  #{ closelog(); #}
+  ())
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
+(dhc-make-with-libs "syslog" ()
+#{
+ #include "syslog.h"  
+#}
+
+  LOG_EMERG  LOG_CRIT LOG_WARNING LOG_NOTICE LOG_INFO LOG_DEBUG
+  LOG_UPTO LOG_CONS LOG_NDELAY LOG_NOWAIT LOG_ODELAY
+  LOG_PERROR LOG_PID LOG_AUTH LOG_AUTHPRIV LOG_CRON LOG_DAEMON
+  LOG_FTP LOG_KERN LOG_LOCAL0 LOG_LOCAL1 LOG_LOCAL2 LOG_LOCAL3
+  LOG_LOCAL4 LOG_LOCAL5 LOG_LOCAL6 LOG_LOCAL7 LOG_LPR LOG_MAIL
+  LOG_NEWS LOG_SYSLOG LOG_USER  LOG_UUCP 
+  setlogmask openlog syslog closelog
+))
