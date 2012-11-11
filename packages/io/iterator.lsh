@@ -1,97 +1,110 @@
-#? *** Iterators
-;;
-
-(libload "io/reader")
-
-#? ** Idx1UbyteLineIterator
-;; Iteratates over lines contained 
-;;
-;; Example: {<pre>
-;; (defparameter bfr2 (new BufferedFileReader "Makefile.1.gz" 1024))
-;; (defparameter gzr (new GzReader bfr2))
-;; (==> gzr read)
-;; (defparameter li (new Idx1UbyteLineIterator :gzr:buffer :gzr:bsz))
+#? ** Reader Iterators
+;; Iterators for <Reader> objects 
+;; For details of iterator functions {<see> Generic Iterator Functions }
+;; Reader Iterator Example: {<pre>
+;; (let* ((buffer-reader (new BufferFileReader "Makefile.gz" 1024))
+;;       (gz-reader (new GzReader buffer-reader))
+;;        (line-reader (new LineReaderIterator gz-reader))
+;;        (lineno 0))
+;;  (do ((line line-reader))
+;;      (printf "%d:%s\n" (incr lineno) 
+;;                       (idx1-ubyte-to-string line))))
 ;; </pre>}
 
-(defclass Idx1UbyteLineIterator object
-  ((-idx1- (-ubyte-)) buffer)
-  ((-int-) bsz)
-  ((-int-) i)
-  ((-int-) l)
-  ((-int-) sep)
-)
+(libload "io/reader")
+  
+#? * ReaderIterator
+;; Iterator for <Reader> objects breaking at a given <separtor> specified as
+;; a ubyte value
+(defclass ReaderIterator iterator
+  ((-obj- (BufferReader)) reader)
+  ((-int-) sep)  
+  ((-int-) i l)
+  ((-idx1- (-ubyte-)) next-item) )
 
-#? * (new Idx1UbyteLineIterator <(-idx1- (-ubyte-)) buffer> <size of content>)
-(defmethod Idx1UbyteLineIterator Idx1UbyteLineIterator (buff sz)
-  (declare (-idx1- (-ubyte-)) buff)
-  (declare (-int-) sz)
-  (setq buffer buff)
-  (setq bsz sz)
-  (setq sep 10)
-  (==> this reset))
+#? (new ReaderIterator <reader> <separator>)
+;; Constructor for <ReaderIterator> where <reader> is an instance of 
+;; the <Reader> class and <separator> is a ubyte value.
+(defmethod ReaderIterator ReaderIterator (rdr separator)
+  (declare (-obj- (BufferReader)) rdr)
+  (declare (-ubyte-) separator)
+  (==> this iterator)
+  (==> rdr read)
+  (setq i 0 l 0 
+	reader rdr
+	sep separator
+	next-item-valid ())
+  ())
 
-(defmethod Idx1UbyteLineIterator reset ()
-  (setq i 0) (setq l 0))
 
-#? * (==> <Idx1UbyteLineIterator> set-separtor <sep char code>)
-;; Change default seperator from \n to something else
-(defmethod Idx1UbyteLineIterator set-separator (s)
-  (declare (-int-) s)
-  (setq sep s))
-
-#? * (==> <Idx1UbyteLineIterator> next)
-;; Returns <(-idx1- (-ubyte-)> containg content from start of buffer upto occurance of
-;; <sep> or last occurance of <sep> up to occurance of <sep> returns empty idx1 
-;; upon exhaustion of buffer
-(defmethod Idx1UbyteLineIterator next ()
+(defmethod ReaderIterator -make-next* (recur)
+  (declare (-method- (ReaderIterator) ((-bool-)) (-idx1- (-ubyte-))) -make-next*)
+  (declare (-bool-) recur)
   (let ((done ())
-	(ret [u])
-	)
+	(ret (ubyte-array 0)))
     (declare (-bool-) done)
     (declare (-idx1- (-ubyte-)) ret)
-    ;(declare (-str-) ret)
-    (while (and (< i bsz)  (not done))
-      (when (= (buffer i) sep)
-	;(print i l)
-	;((idx-trim buffer 0 l i) (- (- i l) 1) 0)
-	(setq ret  (idx-trim buffer 0 l  (- i l) ) )
-	;(print l i)
-	(setq l  (+ i 1))
-	(setq i (+ 1 i))
-	(setq done t)
+    (when (> :reader:bsz 0)
+    (while (and (< i (- :reader:bsz 1))  (not done))
+	 (when (= (:reader:buffer i) sep)
+	       (setq ret  (idx-trim :reader:buffer 0 l  (- i l))
+		     l (+ i 1)
+		     i (+ 1 i)
+		     done t)
+	       )
+	 (setq i (+ i 1))) 
+    (when (not done)  
+	(setq ret (let* ((e (- i l))
+			 (m (if (> e 1) 1 0))
+			 (hd (copy-array (idx-trim :reader:buffer 0 l (+ e m))))
+			 (retv (if (> (==> reader read) 0)
+				  (progn 
+				   (setq i 0 l 0) 
+				   (let*
+				       ((tl (==> this -make-next* t))
+					(dat (array-extend hd 0 (length tl)))
+					(rest (idx-trim dat 0 (length hd))))
+				     (declare (-idx1- (-ubyte-)) tl dat rest)
+				     (declare (-int-) i)
+				     (idx-bloop ((tz tl)
+						 (vz rest))
+						(vz (tz))
+						)
+				     dat
+				     )
+				   )
+				  hd)))
+		    (declare (-int-) e m)
+		    (declare (-idx1- (-ubyte-)) hd retv)
+		    (setq done (> (length retv) 0))
+		    retv))
 	)
-      (setq i (+ i 1)))
-    ret))
+    )
+    (when (not recur)
+	  (when done (setq next-item ret))
+	  (setq next-item-valid done))
+    ret
+    )
+  )
+ 
+(defmethod ReaderIterator -make-next ()
+  (declare (-method- (ReaderIterator) ((-bool-)) (-idx1- (-ubyte-))) -make-next*)
+  
+  (==> this -make-next* ())
+  ())
 
-#? * (==> <Idx1UbyteLineIterator> nextn <nth>)
-;; Returns <(-idx1- (-ubyte-)> containg  content after <nth> occurance of <sep> 
-;; upto occurance of <sep>  returns empty idx1 upon exhaustion of buffer
-(defmethod Idx1UbyteLineIterator nextn (nth)
-  (declare (-int-) nth)
-  (let ((done ())
-	(ret [u])
-	(ith 0))
-    (declare (-bool-) done)
-    (declare (-idx1- (-ubyte-)))
-    (declare (-int-) ith)
-    (while (and (< i bsz)  (not done))
-      (when (= (buffer i) sep)
-	;((idx-trim buffer 0 l i)  (- i l) 0)
-	(setq ret  (idx-trim buffer 0 l  (- i l) ) )
-	(setq l  (+ i 1))
-	(setq i (+ 1 i))
-	(when (or (not (to-bool nth)) (< nth ith)) 
-	  (setq done t))
-	(setq ith (+ ith 1))
-	)
-      (setq i (+ i 1)))
-    ret))
+#? * LineReaderIterator
+;; Iterator for <Reader> objects breaking at newlines (0aX)
+(defclass LineReaderIterator ReaderIterator )
 
+#? (new LineReaderIterator <reader>)
+;; Constructor for <LineReaderIterator> where reader is an instance of 
+;; the <Reader> class
+(defmethod LineReaderIterator LineReaderIterator (rdr)
+  (declare (-obj- (BufferReader)) rdr)
+  (==> this ReaderIterator rdr 10))
 
-(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
-(dhc-make-with-c++ "iterator" ()
-#{
-
-#}
- (Idx1UbyteLineIterator reset Idx1UbyteLineIterator set-separator next nextn)
-))
+(dhc-make-class ()
+		ReaderIterator
+		LineReaderIterator
+		)
