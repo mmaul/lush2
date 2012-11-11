@@ -184,13 +184,14 @@
 
 (defmethod FibonacciIterator FibonacciIterator ()
   (==> this iterator)
-  (setq f 1  next-item 0  next-item-valid t) )
+  (setq f 1  next-item 0  next-item-valid t) 
+  )
 
 (defmethod FibonacciIterator -make-next ()
   (let ((g (+ next-item f)))
     (declare (-int-) g)
     (setq next-item f  next-item-valid t  f g)
-    ()))
+    )())
 
 
 (defclass RangeShuffledIterator iterator
@@ -313,7 +314,8 @@
         (printf "next item valid\n")
       (printf "next item not valid\n") )
     (setq next-item-valid valid)
-    () ))
+    )
+  ())
 
 
 (defmethod Lines*Iterator -destructor ()

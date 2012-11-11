@@ -1,0 +1,72 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; io/readers package for LUSH Lisp Universal Shell
+;;;   Copyright (C) 2012 Mike Maul
+;;;
+;;; This program is free software; you can redistribute it and/or modify
+;;; it under the terms of the GNU Lesser General Public License as 
+;;; published by the Free Software Foundation; either version 2.1 of the
+;;; License, or (at your option) any later version.
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU Lesser General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General Public
+;;; License along with this program; if not, write to the Free Software
+;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+;;; MA 02110-1301  USA
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#? (str-reverse <s>)
+;; Inplace reversal of string s
+(defun str-reverse (s)
+  (declare (-str-) s)
+  #{
+      int c, i, j;
+      for (i = 0, j = strlen($s)-1; i < j; i++, j--) {
+         c = $s[i];
+         $s[i] = $s[j];
+         $s[j] = c;
+      }
+  #}
+  s)
+
+(defun string-to-idx1-ubyte (s)
+  (declare (-str-) s)
+  (let ((ret (ubyte-array (length s))))
+    (declare (-idx1- (-ubyte-)) ret)
+    #{
+      int n = strlen($s);
+      unsigned char *vp = IND_BASE_TYPED($ret, unsigned char);
+      for (int i=0; i<n; i++)
+         vp[i] = (unsigned char)$s[i];
+      
+    #}
+    ret))
+
+
+(defun idx1-ubyte-to-string (ind)
+  (declare (-idx1- (-ubyte-)) ind)
+  (let ((s ""))
+    (declare (-str-) s)
+  #{
+     at *p = make_string_of_length(IND_DIM($ind, 0));
+     unsigned char *vp = IND_BASE_TYPED($ind, unsigned char);
+     $s = (unsigned char *)String(p);
+     for (int i=0; i<IND_DIM($ind,0); i++)
+       $s[i] = (unsigned char)vp[i];
+  #}
+  s))
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
+(dhc-make-with-libs "util_str" ()
+  #{
+
+  #}
+  str-reverse
+  idx1-ubyte-to-string
+  string-to-idx1-ubyte
+))
