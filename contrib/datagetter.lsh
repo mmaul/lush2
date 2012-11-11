@@ -79,8 +79,8 @@
 ;; <ticker> is a string representing the stock ticker
 ;;<start> <finish> are dates
 ;; returns a hashtable with the complete available data from yahoo
-(de yahoo-get-historical-old (ticker start finish)
-  (sys (build-yahoo-query ticker start finish))
+(de yahoo-get-historical-old (ticker start finish res)
+  (sys (build-yahoo-query ticker start finish res))
   (let* ((rawdata (read-lines (concat ticker ".CSV")))
 	 (lenraw (length rawdata))
 	 (cols (csv-decode (cadr rawdata) ))
@@ -98,13 +98,13 @@
 ;; <ticker> is a string representing the stock ticker
 ;;<start> <finish> are dates
 ;; returns a list where first row is column labels and remaining data 
-(de yahoo-get-historical (ticker start finish)
-  (sys (build-yahoo-query ticker start finish))
+(de yahoo-get-historical (ticker start finish res)
+  (sys (build-yahoo-query ticker start finish res))
   (let* ((rawdata (read-lines (concat ticker ".CSV")))
 	 (cols (csv-decode (car rawdata)))
 	 (ncols (length cols))
 	 (nrows (length rawdata))
-	 (d (float-array nrows ncols))
+	 (d (double-array nrows ncols))
 	 (*stdtd*     (date-to-day start)))
     (for (i 1 (- nrows 1))
 	 (let* ((row (csv-decode (nth i rawdata) 
@@ -137,7 +137,8 @@
 #? (build-yahoo-query <ticker> <start> <finish>)
 ;; returns the string needed to make the query to yahoo; only split out for debugging reasons
 ;; Where <start> and <finish> are instances of date class
-(de build-yahoo-query (ticker start finish)
+;; <res> is <d> for daily or <m> for monthly or <w> for weekly
+(de build-yahoo-query (ticker start finish res)
   (let* ((stt (date-splitter start))
 	 (fin (date-splitter finish))
 	 (sy (str (caddr stt)))
@@ -146,8 +147,9 @@
 	 (fm (yahoo-month-fixer (car fin)))
 	 (sd (str (cadr stt)))
 	 (fd (str (cadr fin))))
-  (concat "wget -q \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&a=" sm "&b=" sd "&c=" sy "&d=" fm "&e=" fd "&f=" fy 
-	  "&g=d&ignore=.csv\" -O " ticker ".CSV")))
+  (concat "wget -q \"http://ichart.finance.yahoo.com/table.csv?s=" ticker "&d=" fm "&e=" fd "&f=" fy 
+	  "&a=" sm "&b=" sd "&c=" sy 
+	  "&g=" res "&ignore=.csv\" -O " ticker ".CSV")))
 
 #? (build-dividend-query <ticker> <start> <finish>)
 ;;http://ichart.finance.yahoo.com/table.csv?s=MO&a=00&b=2&c=1970&d=08&e=27&f=2008&g=v&ignore=.csv
