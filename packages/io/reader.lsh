@@ -30,49 +30,62 @@
     (if (and lib (filep lib))
    lib
        (error "unable to find libz"))))
-#? ** BufferReader
-;; Base class for buffered readers implements buffer as IDX of ubyte
-
-#? * Slots
-#? ((-idx1- (-ubyte-)) buffer)
-;; Content returned from <read>
-#? ((-int-) sz)
-;; Length of buffer
-#? ((-int-) bsz)
-;; Length of data in <buffer>
-
+;--------------------------------------------------
 (defclass BufferReader object
- ((-idx1- (-ubyte-)) buffer)
- ((-int-) sz)
- ((-int-) bsz)
+ ((-gptr- "char *") buffer)
+ ((-int-) bsize)
+ ((-int-) blen)
  )
 
-#? * (new BufferReader <buffer size>)
+;#? * (new BufferReader <buffer size>)
 ;;
 (defmethod BufferReader BufferReader (bufsz)
  (declare (-int-) bufsz)
- (setq sz bufsz)
- (setq bsz 0)
- (setq buffer (ubyte-array bufsz))
-
+ (setq bsize bufsz)
+ (setq blen 0)
+ #{ $buffer = (char *)malloc(sizeof(char)*$bsize+1); #}
  ()))
 
 (defmethod BufferReader -destructor ()
- ()
+  #{ free($buffer); #} 
+()
 )
 
-#? * (==> <BufferReader> read)
-;; Dummy method, to be implemented by descendants
+;#? * (==> <BufferReader> read)
+;;; Dummy method, to be implemented by descendants
 (defmethod BufferReader read ()
-   bsz)
+   blen)
 
-#? * (==> <BufferReader> to-string)
-;; Returns string view of buffer's content
+;#? * (==> <BufferReader> to-string)
+;;; Returns string view of buffer's content
 (defmethod BufferReader to-string ()
   (let ((ret ""))
     (declare (-str-) ret)
-    #{ $ret = (char *)IDX_PTR($buffer,unsigned char); #}
+    #{ 
+    at *p = make_string_of_length($blen+1);
+    $ret = (unsigned char *)String(p);
+    for (int i=0; i<$blen; i++)
+    $ret[i] = (unsigned char)$buffer[i];
+    #}
     ret))
+
+(defmethod BufferReader buffer-array ()
+  (let* ((ary (ubyte-array 0))
+	 (srg (idx-storage ary)))
+   (declare (-srg- (-ubyte-)) srg)
+   ;(declare (-gptr- "char *") buffer)
+    ;(declare (-int-) bsize)
+  #{
+   $srg->size = $bsize;
+   $srg->kind = STS_FOREIGN;//STS_MMAP;
+   $srg->isreadonly = true;
+   $srg->data = $buffer;
+   $ary->offset = 0;
+   $ary->dim[0] = $bsize;
+  #}
+  ary
+  ))
+
 
 #? ** BufferFileReader BufferReader
 ;; Subclass of BufferReader for reading files
@@ -105,16 +118,12 @@
 ;; Decompressed data can be accessed in <buffer> slot
 ;; if EOF bytes read is 0
 (defmethod BufferFileReader read ()
- (let ((bszt 0))
-    (declare (-int-) bszt)
-    (array-clear buffer 0)
-    #{ $bszt = fread(IDX_PTR($buffer,unsigned char),1,$sz,$fptr); #}
-    (setq bsz bszt)))
+  #{ $blen = fread($buffer,1,$bsize,$fptr); #}
+  blen)
 
 #? * (==> to-string)
 ;; Inherited from BufferReader
 ;; Returns string view of buffer
-
 
 #? ** GzReader BufferReader
 ;; Application of BufferReader to Gzip'd data
@@ -135,7 +144,6 @@
 
 (defclass GzReader BufferReader
   ((-obj- (BufferReader)) reader)
-  ((-int-) blen)
   ((-int-) initst)
   ((-int-) err)
   ((-gptr- "z_stream *") strm))
@@ -145,10 +153,12 @@
 (defmethod GzReader GzReader (rdr)
   (declare (-obj- (BufferReader)) rdr)
   (setq reader rdr)
-  (setq sz (* :rdr:sz 15))
-  (setq bsz 0)
-  (setq buffer (ubyte-array sz))
-  #{ $strm = (z_stream *)malloc(sizeof(z_stream));
+  (setq bsize (* :rdr:bsize 15))
+  (==> this BufferReader bsize)
+  (setq blen 0)
+  ;(setq buffer (ubyte-array sz))
+  #{ 
+     $strm = (z_stream *)malloc(sizeof(z_stream));
      $strm->zalloc = Z_NULL;
      $strm->zfree = Z_NULL;
      $strm->opaque = Z_NULL;
@@ -169,6 +179,7 @@
        inflateEnd($strm);
      }
      free($strm);
+     free($buffer);
   #}
   ()
 )
@@ -181,22 +192,24 @@
     (in_buf :reader:buffer)
     (wtf 0)
   )
-  (declare (-idx1- (-ubyte-)) in_buf)
-  (declare (-int-) sz wtf)
+  ;(declare (-idx1- (-ubyte-)) in_buf)
+(declare (-gptr- "char *") in_buf)
+  ;(declare (-int-) sz wtf)
   ;(array-clear buffer 0)
   #{
-      $strm->next_in  = IDX_PTR($in_buf,unsigned char);
+      $strm->next_in  = $in_buf;//IDX_PTR($in_buf,unsigned char);
       $strm->avail_in = (uInt)$bin;
-      $strm->next_out = IDX_PTR($buffer,unsigned char);
-      $strm->avail_out = (uInt)$sz;
+      $strm->next_out = $buffer;//IDX_PTR($buffer,unsigned char);
+      $strm->avail_out = (uInt)$bsize;
       $err = inflate($strm,  Z_SYNC_FLUSH);
-      $bsz = $strm->total_out;
-      $blen = $sz - $strm->avail_out;
-      $wtf = $strm->avail_out;
+      $bsize = $strm->total_out;
+      $blen = $bsize - $strm->avail_out;
+      //$wtf = $strm->avail_out;
     #}
-  (setq bsz blen)
+  ;(setq bsz blen)
     blen)
  )
+
 
 (defclass StringReader BufferReader
   ((-bool-) eof)
@@ -204,36 +217,25 @@
 
 #? * (new BufferReader <buffer size>)
 ;;
-(defmethod StringReader StringReader (s)
-  (declare (-str-) s)
-  (setq buffer (string-to-idx1-ubyte s))
-  (setq sz (length s))
-  (setq bsz sz eof ())
-  ())
+;(defmethod StringReader StringReader (s)
+;  (declare (-str-) s)
+;  (setq buffer_s (string-to-idx1-ubyte s))
+;  (setq sz (length s))
+;  (setq bsz sz eof ())
+;  ())
 
-(defmethod StringReader read ()
-  (if eof (progn (setq bsz 0) 0) (progn (setq eof t) bsz)))
-
-;; ------------------------------------
-#? * (==> <BufferReader> to-string)
-;; Returns string view of buffer's content
-(defun idx1-ubyte-string-view (dx)
-  (declare (-idx1- (-ubyte-)) dx)
-  (let ((ret ""))
-    (declare (-str-) ret)
-    #{ $ret = (char *)IDX_PTR($dx,unsigned char); #}
-    ret))
+;(defmethod StringReader read ()
+;  (if eof (progn (setq bsz 0) 0) (progn (setq eof t) bsz)))
 
 
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
-(dhc-make-with-c++ "reader" (list  lz)
+(dhc-make-with-c++ "reader2" (list  lz)
 #{
  #include "zlib.h"  
  #include "zconf.h"  
-#}
- (BufferReader BufferReader -destructor read to-string)
- (BufferFileReader BufferFileReader -destructor read)
+#}  
+ (BufferReader BufferReader -destructor read to-string buffer-array)
+ (BufferFileReader BufferFileReader -destructor read )
  (GzReader GzReader -destructor read)
- idx1-ubyte-string-view
- (StringReader StringReader)
+; (StringReader StringReader)
 ))

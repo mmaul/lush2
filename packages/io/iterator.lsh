@@ -12,15 +12,37 @@
 ;; </pre>}
 
 (libload "io/reader")
-  
+(libload "util/array")  
+
 #? * ReaderIterator
 ;; Iterator for <Reader> objects breaking at a given <separtor> specified as
 ;; a ubyte value
+;; Example: {<code>
+;; (defparameter bfr2 (new BufferFileReader1 "dnsreqs13.log" 128))
+;; (defparameter li (new ReaderIterator bfr2 10))
+;; (idx1-ubyte-to-string (next li))
+;; </code>}
 (defclass ReaderIterator iterator
   ((-obj- (BufferReader)) reader)
-  ((-int-) sep)  
-  ((-int-) i l)
+    ((-int-) sep)  
+  ((-int-) i l n )
   ((-idx1- (-ubyte-)) next-item) )
+
+(defmethod ReaderIterator -buffer-storage (srg)
+  (declare (-srg- (-ubyte-)) srg)
+  (let ((buffer :reader:buffer)
+	(bsize :reader:bsize))
+    (declare (-gptr- "char *") buffer)
+    (declare (-int-) bsize)
+  #{
+  $srg->size = $bsize;
+  $srg->kind = STS_FOREIGN;//STS_MMAP;
+  $srg->isreadonly = true;
+  $srg->data = $buffer;
+  #}
+  ()
+  ))
+
 
 #? (new ReaderIterator <reader> <separator>)
 ;; Constructor for <ReaderIterator> where <reader> is an instance of 
@@ -29,70 +51,81 @@
   (declare (-obj- (BufferReader)) rdr)
   (declare (-ubyte-) separator)
   (==> this iterator)
-  (==> rdr read)
   (setq i 0 l 0 
 	reader rdr
 	sep separator
-	next-item-valid ())
+	next-item-valid () )
+  (setq next-item (ubyte-array 0))
+
+  (setq n 0)
+  (==> reader read)
+  ;(==> this -buffer-storage (idx-storage next-item))
   ())
 
 
-(defmethod ReaderIterator -make-next* (recur)
-  (declare (-method- (ReaderIterator) ((-bool-)) (-idx1- (-ubyte-))) -make-next*)
-  (declare (-bool-) recur)
-  (let ((done ())
-	(ret (ubyte-array 0)))
-    (declare (-bool-) done)
-    (declare (-idx1- (-ubyte-)) ret)
-    (when (> :reader:bsz 0)
-    (while (and (< i (- :reader:bsz 1))  (not done))
-	 (when (= (:reader:buffer i) sep)
-	       (setq ret  (idx-trim :reader:buffer 0 l  (- i l))
-		     l (+ i 1)
-		     i (+ 1 i)
-		     done t)
-	       )
-	 (setq i (+ i 1))) 
-    (when (not done)  
-	(setq ret (let* ((e (- i l))
-			 (m (if (> e 1) 1 0))
-			 (hd (copy-array (idx-trim :reader:buffer 0 l (+ e m))))
-			 (retv (if (> (==> reader read) 0)
-				  (progn 
-				   (setq i 0 l 0) 
-				   (let*
-				       ((tl (==> this -make-next* t))
-					(dat (array-extend hd 0 (length tl)))
-					(rest (idx-trim dat 0 (length hd))))
-				     (declare (-idx1- (-ubyte-)) tl dat rest)
-				     (declare (-int-) i)
-				     (idx-bloop ((tz tl)
-						 (vz rest))
-						(vz (tz))
-						)
-				     dat
-				     )
-				   )
-				  hd)))
-		    (declare (-int-) e m)
-		    (declare (-idx1- (-ubyte-)) hd retv)
-		    (setq done (> (length retv) 0))
-		    retv))
-	)
-    )
-    (when (not recur)
-	  (when done (setq next-item ret))
-	  (setq next-item-valid done))
-    ret
-    )
+ (defmethod ReaderIterator -make-next ()
+   (declare (-method- (ReaderIterator) ((-srg- (-ubyte-))) (-bool-)) -buffer-storage)
+   (let* ((item (ubyte-array 0)) 
+	 (srg (idx-storage item))
+	 (valid ())
+	 (base :reader:buffer)
+	 (np n)
+	 (sepp ())
+	 )
+     (declare (-bool-) valid sepp)
+     (declare (-gptr- "char *") base)
+     (declare (-int-) np)
+     (setq next-item (ubyte-array 0))
+     (==> this -buffer-storage srg)
+     (when (>= n (- :reader:blen 0)) 
+	    ;(if (= (length next-item) 0)
+			 ;(progn 
+				(==> reader read)
+				(setq n 0 np 0)
+				#{ $item->offset = 0; #}
+				;(==> this -buffer-storage (idx-storage item))
+				(setq valid t)
+				;)
+			 ;(progn (print "X")
+				;(setq next-item next-item))(setq valid t))
+	    )
+     (while (and (not sepp) (> :reader:blen 0) (< n :reader:blen))
+	    (when (to-bool #{ ($item->offset)<($srg->size) #})
+	      #{ 
+              $item->offset += $n;
+              size_t n = 0;
+              size_t nmax = $item->offset < ($srg->size - 0) ? 
+                            $srg->size - $item->offset : 0;
+              char *c = $base + $item->offset;
+              while (n<nmax && c[n]!=$sep){n++;};
+              $sepp = c[n]==$sep;
+              $n = (int)(n + 1);
+              $item->dim[0] = n;
+              $valid = (nmax>0);
+              #} )
+	    (when (or (not sepp) )
+		  #{ $item->offset = $np; #}
+		  (setq next-item (if (= (length next-item) 0)
+				      (copy-array item)
+				      (idx1-ubyte-concat next-item item)))
+		    
+		  (setq n 0 np 0)
+		  #{ $item->offset = 0; #}
+		  (==> reader read)
+		  ;(==> this -buffer-storage (idx-storage item))
+		  (setq valid ())
+		  )
+	    )
+     
+     (setq next-item (if (= (length next-item) 0)
+			 (copy-array item)
+			 (idx1-ubyte-concat next-item item)))
+     (setq n (+ np n))
+     (setq next-item-valid (and valid (> :reader:blen 0) (> n 0)))
+     )
+  ()
   )
  
-(defmethod ReaderIterator -make-next ()
-  (declare (-method- (ReaderIterator) ((-bool-)) (-idx1- (-ubyte-))) -make-next*)
-  
-  (==> this -make-next* ())
-  ())
-
 #? * LineReaderIterator
 ;; Iterator for <Reader> objects breaking at newlines (0aX)
 (defclass LineReaderIterator ReaderIterator )
@@ -102,7 +135,8 @@
 ;; the <Reader> class
 (defmethod LineReaderIterator LineReaderIterator (rdr)
   (declare (-obj- (BufferReader)) rdr)
-  (==> this ReaderIterator rdr 10))
+  (==> this ReaderIterator rdr 10)
+  ())
 
 (dhc-make-class ()
 		ReaderIterator
