@@ -12,9 +12,9 @@
 (defconstant collect-st 2)
 (defconstant quote-st 3)
 (defconstant complete-st 4)
-(defvar quote-lit (asc "\""))
-(defvar backslash-lit (asc "\\"))
-   
+(defparameter quote-lit (asc "\""))
+(defparameter backslash-lit (asc "\\"))
+    
 #? (get-csv-value (<s> <o> &optional <osep> <trim>)
 ;; Given a string <s> containing a line of CSV text and
 ;; <o> a offset returns a list containing the next column of data and the 
@@ -23,14 +23,15 @@
 ;; otherwise the sepororator is the tab character
 ;; if <trim> is not nill leading and trailing whitespace
 ;; is removed from the  coloumn
+ 
 (defun get-csv-value (s o &optional osep trim)
-  (let ((r "");
+  (let ((r "");  
 	(n (length s))
 	(state  collect-st)
 	(i o)
 	(lst 0)
 	(sep (asc (if osep osep ","))))
-;(print complete-st state i n)
+   ;(print complete-st state i n)
     (while (and (<> complete-st state) (< i n))
       (let ((ch (s i))) 
 	(cond
@@ -55,7 +56,7 @@
 	(setq lst ch)))
     (when (= "" r) (setq r ()))
     (list r i)))
-
+ 
 
 #? (decode <s> &optional <seperator> <trim>)
 ;; Returns a list of values given a CSV string
@@ -65,7 +66,7 @@
 ;; is removed from the  coloumn
 ;; <conversion> if supplied will be a list of monodic functions
 ;; which will be applied to the resultant
-(defun decode (s  &optional osep trim conversions)
+(defun decode (s  &optional osep trim conversions) 
   (let ((o 0)
 	(ret ())
 	(fin ())
