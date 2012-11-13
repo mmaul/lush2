@@ -1,4 +1,4 @@
-
+(libload "io/net/udp")
 #? *** Syslog
 ;; Example
 ;; {<pre>
@@ -124,6 +124,29 @@
   #{ closelog(); #}
   ())
 
+(defclass UDPSyslog object
+  ((-obj- (UDPClient)) udp-sock)
+  ((-int-) facility))
+
+(defmethod UDPSyslog UDPSyslog (host port facility_)
+  (declare (-str-) host)
+  (declare (-int-) port facility_)
+  (setq udp-sock (new UDPClient host port 575))
+  (setq facility facility_)
+  ())
+
+(defmethod UDPSyslog -destructor ()
+  (==> udp-sock close)
+  ())
+
+(defmethod UDPSyslog syslog (priority message)
+  (declare (-int-) priority)
+  (declare (-str-) message)
+  (==> udp-sock send (sprintf "<%d> %s" (+ facility priority) message)))
+
+(defmethod UDPSyslog close ()
+  (==> udp-sock close)
+  ())
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
 (dhc-make-with-libs "syslog" ()
 #{
@@ -137,4 +160,5 @@
   LOG_LOCAL4 LOG_LOCAL5 LOG_LOCAL6 LOG_LOCAL7 LOG_LPR LOG_MAIL
   LOG_NEWS LOG_SYSLOG LOG_USER  LOG_UUCP 
   setlogmask openlog syslog closelog
+  (UDPSyslog UDPSyslog -destructor syslog close)
 ))
