@@ -26,7 +26,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (libload "fftw-config")
-
+(libload "libstd/compat")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 #? *** fftw: an interface to the FFTW3 Fourier Transform library
 ;; This is an interface to the FFTW3 Fourier Transform
