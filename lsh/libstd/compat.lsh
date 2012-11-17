@@ -178,6 +178,10 @@
 (defvar add-lists add-listes)
 
 
+;;; ----------------------------------------
+;;; load-matrix is found in a number of examples
+;;  I expected it existed at some point
+(defmacro load-matrix (f) `(load-array ,f))
 
 ;;; ----------------------------------------
 ;;; Yann-isms
@@ -187,7 +191,6 @@
 
 (dmd idx-m2timesm2 (a b c)
   `(let ((aa ,a)) (idx-eloop ((bi ,b) (ci ,c)) (idx-m2dotm1 aa bi ci)))))
-
 
 ;;; ----------------------------------------
 ;;; Pascal-isms
