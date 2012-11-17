@@ -66,3 +66,7 @@ Refer to boot documention for details
 #? (==> <dist> standard-deviation)
 
 #? (==> <dist> variance)
+
+#? (==> <dist> support)
+
+#? (==> <dist> range)
