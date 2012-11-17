@@ -7,8 +7,9 @@ exec lush2 "$0" "$@"
 (when (or (member "-h" argv) (member "--help" argv))
   (writing "$stderr" 
    (render-brace-text 0 72
+       (let ((script (basename (car argv))))
    '{<p> 
-     Synopsis: ,,(basename (car argv)) [-h] [-t thrust] [-g gravity] [-m mass] [-f cx]
+     Synopsis: ,,script [-h] [-t thrust] [-g gravity] [-m mass] [-f cx]
 
      A simple Lunar Lander game. 
      {<ul>
@@ -28,7 +29,7 @@ exec lush2 "$0" "$@"
      in which it is displayed in a scrollable window of size maxwidth be maxheight.
      The image file can be in any format that ImageMagick's <convert>
      command understands.{<br>}
-     }))
+     })))
   (exit 1))
  
 (de get-numeric-opt (a)

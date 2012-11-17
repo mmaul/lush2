@@ -56,7 +56,7 @@ exec lush2 "$0" "$@"
 (CONST_255 255)
 
 (de life ()
-    (new-window WIDTH HEIGHT)
+    (new-window! WIDTH HEIGHT)
     (let* ((evlock (new EventLock window))
 	   (event ())
 	   (accum (ubyte-array HEIGHT WIDTH))
