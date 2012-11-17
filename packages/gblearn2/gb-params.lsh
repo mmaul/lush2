@@ -90,12 +90,12 @@
 ;; the matrix file <s>, which must be an
 ;; idx1 of floats. The number of elements
 ;; in the file <s> must match the size of <idx1-param>.
-(defmethod idx1-param load (s) (array-copy (load-matrix s) x) ())
+(defmethod idx1-param load (s) (array-copy (load-array s) x) ())
 
 #? (==> <idx1-param> save <s>)
 ;; save the slot <x> of the <idx1-param> in file <s>.
 ;; This can be subsequently recovered with the load method.
-(defmethod idx1-param save (s) (save-matrix x s) ())
+(defmethod idx1-param save (s) (save-array x s) ())
 
 #? (==> <idx1-param> size)
 ;; return the number of elements of <idx1-param>.

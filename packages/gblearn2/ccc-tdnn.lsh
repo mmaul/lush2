@@ -159,7 +159,7 @@
                                            (max-seq-len 2000))
   (setq tk1 -tk1 tk2 -tk2 tk3 -tk3 fk1 -fk1 fk2 -fk2 fk3 -fk3
         fs1 -fs1 fs2 -fs2 fs3 -fs3)
-  (let ((input-normalization (load-matrix norm-file)))
+  (let ((input-normalization (load-array norm-file)))
     (setq input-mean (select input-normalization 1 0))
     (setq input-idev (select input-normalization 1 1)))
   (setq param (new idx1-ddparam 0 0.1 0.02 0.02 200000)) 

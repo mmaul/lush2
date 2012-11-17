@@ -101,11 +101,11 @@
 #? (==> <idx-state> load <s>)
 ;; fill slot x with content of file <s>
 (defmethod idx-state load (s)
-  (let ((m (load-matrix s))) (array-copy m x)))
+  (let ((m (load-array s))) (array-copy m x)))
 
 #? (==> <idx-state> save <s>
 ;; save content of slot x into file <s>.
-(defmethod idx-state save (s) (save-matrix x s))
+(defmethod idx-state save (s) (save-array x s))
 
 #? (==> <idx-state> dump <s>
 ;; save the entire object into file <s>

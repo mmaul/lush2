@@ -39,6 +39,7 @@
 
 (libload "libidx/idx-macros")
 (libload "libidx/idx-squops")
+(libload "libstd/compat")
 (libload "gblearn2/gb-modules")
 (libload "gblearn2/gb-states")
 (libload "gblearn2/gb-params")
