@@ -56,7 +56,7 @@
     (chdir db-forest-dir)
     (sys "echo .MAT 2 581012 55 > temp.mat")
     (sys "gzip -dc covtype.data.gz | sed -e 's/,/ /g' >> temp.mat")
-    (save-matrix (load-matrix "temp.mat") "covtype.mat")
+    (save-array (load-array "temp.mat") "covtype.mat")
     (sys "gzip -9 covtype.mat")
     (sys "rm temp.mat") 
     (chdir odir) ) )
@@ -73,7 +73,7 @@
   ;; -- load data
   (when (not :db-forest-data)
     (let ((fname (concat-fname db-forest-dir "covtype.mat.gz")))
-      (setq :db-forest-data (load-matrix (concat "| zcat " fname))) ) )
+      (setq :db-forest-data (load-array (concat "| zcat " fname))) ) )
   ;; -- create database
   (setq db-forest-raw
 	(new db-ffmatrix 
