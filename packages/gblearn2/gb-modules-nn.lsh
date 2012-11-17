@@ -204,7 +204,7 @@
   (setq weight (==> prm alloc-idx2-ddstate tout tin))
   ())
 
-(defmethod e-layer save (f) (save-matrix f weight))
+(defmethod e-layer save (f) (save-array f weight))
 (defmethod e-layer load (f) (load-matrix-into f weight))
 
 (defmethod e-layer forget (z p)
