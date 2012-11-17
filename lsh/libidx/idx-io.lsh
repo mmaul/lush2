@@ -94,14 +94,15 @@
 
 (libload "libc/stdio")
 (libload "libidx/idx-macros")
-
-#? (little-endianp)
+;; ---------------------------------
+;; Already declared in libc.lsh
+;;#? (little-endianp)
 ;; return t if the CPU is little endian (e.g. x86).
 ;; and nil if it is not little endian (like sparcs).
-(de little-endianp ()
-  (cheader "static int endiantest = 1;")
-  (cheader "#define little_endian_p (*(char*)&endiantest)")
-  (to-bool #{ little_endian_p #} ) )
+;(de little-endianp ()
+;  (cheader "static int endiantest = 1;")
+;  (cheader "#define little_endian_p (*(char*)&endiantest)")
+;  (to-bool #{ little_endian_p #} ) )
 
 #? (fread-idx1-ubyte <file-pointer> <m>)
 ;;.VP
