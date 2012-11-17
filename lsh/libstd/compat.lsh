@@ -179,9 +179,10 @@
 
 
 ;;; ----------------------------------------
-;;; load-matrix is found in a number of examples
+;;; load-matrix save-matrix is found in a number of examples
 ;;  I expected it existed at some point
 (defmacro load-matrix (f) `(load-array ,f))
+(defmacro save-matrix (i f) `(save-array ,i ,f))
 
 ;;; ----------------------------------------
 ;;; Yann-isms
