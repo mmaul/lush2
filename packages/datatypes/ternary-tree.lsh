@@ -1,0 +1,138 @@
+#? ** Ternary Tree
+;; Implementation of a Ternary tree structure specialized for string matching.
+;; Refer to wikipedia for a description of ternary trees 
+;; {<hlink> http://en.wikipedia.org/wiki/Ternary_search_tree }
+;; Ternary trees are especially useful for implemeting autocompletion and
+;; nearest neighbor lookups. 
+;;
+
+
+(defclass TernaryNode object
+  ((-ubyte-) m_char)
+  ((-mptr-) m_left m_center m_right)
+  ((-bool-) m_word_end)
+)
+
+(in-namespace (class TernaryNode)
+
+(defmacro nullp (p)
+  `(= ,p NULL) )
+
+(defmacro to-node (p)
+  `(to-obj (classof this) ,p)
+  )
+) 
+)
+
+#? * (new TernaryNode <char> <word-end>
+;; Constructor for Ternary node with the value of <char> and
+;; the boolean argument <word-end> signifies a possible terminal node
+(defmethod TernaryNode TernaryNode (ch we)
+  (declare (-ubyte-) ch) (declare (-bool-) we)
+  (setq m_char ch)
+  (setq m_word_end we)
+;  (setq m_left NULL m_center NULL m_right NULL)
+)
+
+(defun mptr-nullp (f)
+  (declare (-mptr-) f)
+  (let ((ret ()))
+    (declare (-bool-) ret)
+    #{ $ret = ($f == 0) #}
+  ret))
+
+#? (==> <TernaryNode> add-node <str> <pos>)
+;; creates a new Ternary node with the value of the character in <str> at the
+;; position <pos> and attaches to the current node
+(defmethod TernaryNode add-node (s pos)
+  (declare (-method- (TernaryNode) ((-str-) (-int-)) (-bool-)) add-node)
+  (declare (-int-) pos)
+  (declare (-str-) s)
+  (cond
+    ((< (s pos) :this:m_char)  (let ((next-node (if (mptr-nullp m_left) 
+						    (new TernaryNode (s pos) ())
+						    (to-node m_left))))
+				 (setq m_left (to-mptr next-node))
+				 (==> next-node add-node s pos)))
+    ((> (s pos) :this:m_char)  (let ((next-node (if (mptr-nullp m_right) 
+						    (new TernaryNode (s pos) ())
+						    (to-node m_right))))
+				 (setq m_right (to-mptr next-node))
+				 (==> next-node add-node s pos)))
+    (t (if (= (+ pos 1) (length s)) 
+	   (setq m_word_end t)
+	   (let ((next-node (if (mptr-nullp m_center) 
+				(new TernaryNode (s pos) ())
+				(to-node m_center))))
+	     (setq m_center (to-mptr next-node))
+	     (==> next-node add-node s (+ pos 1)  ))))
+    )
+  ())
+
+#? (==> <TernaryNode> add <str>)
+;; Inserts <str> character by character in to the current Ternary Node
+(demethod TernaryNode add (s)
+  (declare (-str-) s)
+  (if (= s "") 
+      (error "ArgumentException")
+      (==> this add-node s 0 )))
+
+
+#? (==> <TernaryNode> find <str> <sticky>)
+;; searches for <str> in <TernaryNode> if the boolean argument <sticky>
+;; is true then then the search completes if a matching node if found
+;; with the word_end set to true
+(demethod TernaryNode find (s sticky)
+  (declare (-str-) s)
+  (declare (-bool-) sticky)
+  (if (= s "") 
+      (progn ;(print "ArgumentException") 
+	     ())
+      (let ((pos 0)
+	    (node-ptr (to-mptr this))
+	    (end ()))
+	(declare (-int-) pos)
+	(declare (-mptr-) node-ptr)
+	(declare (-bool-) end)
+        (while (and (not (nullp node-ptr)) (not end) (< pos (length s)))
+	  (let ((node (to-node node-ptr)))
+	    (declare (-obj- (TernaryNode)) node)
+	    (cond
+	      ((< (s pos) :node:m_char) (setq node-ptr :node:m_left))
+	      ((> (s pos) :node:m_char) (setq node-ptr :node:m_right))
+	      (t (progn (setq pos (+ pos 1))
+			(cond
+			  ((and sticky :node:m_word_end) (setq end :node:m_word_end))
+			  ((= pos (length s)) (setq end :node:m_word_end))
+			  (t                  (setq node-ptr :node:m_center))
+			  )))))
+	  )
+        end))
+  )
+
+#? (==> <TernaryNode> has-part-of <str> )
+;; searches for <str> in <TernaryNode> succeding if the <TernaryNode> 
+;; contains a string which is part of the string <str>
+(defmethod TernaryNode has-part-of (s)
+  (declare (-str-) s)
+  (==> this find s t))
+
+#? (==> <TernaryNode> contains <str> )
+;; searches for <str> in <TernaryNode> succeding if the <TernaryNode> 
+;; contains a string which matches the string <str>
+(defmethod TernaryNode contains (s)
+  (declare (-str-) s)
+  (==> this find s ()))
+
+    
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
+  (dhc-make-with-c++ "ternary_tree" (list )
+  #{
+
+  #}
+  mptr-nullp
+  (TernaryNode TernaryNode find has-part-of contains))
+
+)
+
+
