@@ -33,7 +33,7 @@
 ;; These routines are based on the C-like Compilable file I/O routines.
 ;; They use their own matrix file format, different from the 
 ;; traditional Lush matrix formats. Nevertheless, the traditional functions
-;; <load-matrix> and <save-matrix> are able to handle this format.
+;; <load-array> and <save-array> are able to handle this format.
 
 
 ;; These routines that take a file-name as argument are based on the lower 
