@@ -35,6 +35,7 @@
  ((-gptr- "char *") buffer)
  ((-int-) bsize)
  ((-int-) blen)
+ ((-int-) err)
  )
 
 ;#? * (new BufferReader <buffer size>)
@@ -62,7 +63,7 @@
   (let ((ret ""))
     (declare (-str-) ret)
     #{ 
-    at *p = make_string_of_length($blen+1);
+    at *p = make_string_of_length($blen);
     $ret = (unsigned char *)String(p);
     for (int i=0; i<$blen; i++)
     $ret[i] = (unsigned char)$buffer[i];
@@ -145,7 +146,10 @@
 (defclass GzReader BufferReader
   ((-obj- (BufferReader)) reader)
   ((-int-) initst)
-  ((-int-) err)
+  ((-int-) bin)
+  ((-int-) avail_out)
+  ((-int-) avail_in)
+  ((-int-) stream_end)
   ((-gptr- "z_stream *") strm))
 
 #? * (new GzReader <Buffered Reader>)
@@ -153,9 +157,9 @@
 (defmethod GzReader GzReader (rdr)
   (declare (-obj- (BufferReader)) rdr)
   (setq reader rdr)
-  (setq bsize (* :rdr:bsize 15))
+  (setq bsize (* :rdr:bsize 5))
   (==> this BufferReader bsize)
-  (setq blen 0)
+  (setq blen 0 bin 0 avail_out bsize avail_in 0 stream_end 0)
   ;(setq buffer (ubyte-array sz))
   #{ 
      $strm = (z_stream *)malloc(sizeof(z_stream));
@@ -179,7 +183,7 @@
        inflateEnd($strm);
      }
      free($strm);
-     free($buffer);
+//   free($buffer);
   #}
   ()
 )
@@ -188,27 +192,52 @@
 ;; Returns number decompressed or 0 one End of Stream
 ;; Decompressed data can be accessed in <buffer> slot
 (defmethod GzReader read ()
-  (let ((bin (==> reader read))
-    (in_buf :reader:buffer)
-    (wtf 0)
+  (let ((in_buf :reader:buffer)
+	      (wtf 0)
+	      )
+    (declare (-gptr- "char *") in_buf)
+    (declare (-int-) wtf)
+    (if (= stream_end 1) 
+	0 
+	(progn 
+          (when (<= avail_in 0) 
+	    (setq avail_in (==> reader read))
+	    #{ $strm->next_in  = $in_buf;
+	       $strm->avail_in = (uInt)$avail_in; #}
+	       
+	    0)
+	  (when (> avail_in 0)
+	
+	    #{
+            //int badend=0;
+	    //memset($buffer,0,$bsize);
+	    $strm->next_out = $buffer;
+	    $strm->avail_out = (uInt)$bsize;
+	    $err = inflate($strm,  Z_NO_FLUSH);
+	    switch ($err) {
+	    case Z_NEED_DICT:
+	      $err = Z_DATA_ERROR;     /* and fall through */
+            case Z_DATA_ERROR:
+            case Z_MEM_ERROR:
+                (void)inflateEnd($strm);
+                //badend=1;
+                break;
+            }
+            $blen = $bsize - $strm->avail_out;
+            ////$blen = $strm->total_out;
+            $avail_out = $strm->avail_out;
+	    $avail_in = $strm->avail_in;
+            //printf("(blen:%d avail_out:%d bsize:%d avail_in:%d err:%d)\n",
+            //     $blen,$avail_out,$bsize,$avail_in,$err);
+            $stream_end = $err == Z_STREAM_END;
+            #}
+            (- blen 0)
+            )
+	  (- blen 0)
+         )
+      )
+    )
   )
-  ;(declare (-idx1- (-ubyte-)) in_buf)
-(declare (-gptr- "char *") in_buf)
-  ;(declare (-int-) sz wtf)
-  ;(array-clear buffer 0)
-  #{
-      $strm->next_in  = $in_buf;//IDX_PTR($in_buf,unsigned char);
-      $strm->avail_in = (uInt)$bin;
-      $strm->next_out = $buffer;//IDX_PTR($buffer,unsigned char);
-      $strm->avail_out = (uInt)$bsize;
-      $err = inflate($strm,  Z_SYNC_FLUSH);
-      $bsize = $strm->total_out;
-      $blen = $bsize - $strm->avail_out;
-      //$wtf = $strm->avail_out;
-    #}
-  ;(setq bsz blen)
-    blen)
- )
 
 
 (defclass StringReader BufferReader

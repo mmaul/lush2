@@ -24,10 +24,11 @@
 (defun idx1-ubyte-concat (a1 a2)
   (declare (-idx1- (-ubyte-)) a1 a2)
   (let* ((ol (length a1))
-	 (ap (array-extend a1 0 (length a2))))
-    (for (i 0 (- (length a2)1))
-	 (ap (+ ol i) (a2 i)))
-    ap))
+	 (ap (array-extend! a1 0 (length a2))))
+        (for (i 0 (- (length a2)1))
+	     (ap (+ ol i) (a2 i)))
+	ap)
+  )
 
 
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
