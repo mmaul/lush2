@@ -101,15 +101,21 @@
 #? (==> <idx-state> load <s>)
 ;; fill slot x with content of file <s>
 (defmethod idx-state load (s)
-  (let ((m (load-array s))) (array-copy m x)))
+  (let ((m (load-array s))) (array-copy m :this:x)))
 
 #? (==> <idx-state> save <s>
 ;; save content of slot x into file <s>.
-(defmethod idx-state save (s) (save-array x s))
+(defmethod idx-state save (s) (save-array :this:x s))
 
-#? (==> <idx-state> dump <s>
+#? (==> <idx-state> save/text <s>
+;; save content of slot x into file <s>.
+(defmethod idx-state save/text (s) (save-array/text :this:x s))
+
+;; dump no longer exists could use bwrite but slots
+;; are not getting restored on load
+;;#? (==> <idx-state> dump <s>
 ;; save the entire object into file <s>
-(defmethod idx-state dump (s) (write-binary s this))
+;;(defmethod idx-state dump (s) (writing s (bwrite this)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
