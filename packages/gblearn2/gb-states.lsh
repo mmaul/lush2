@@ -43,6 +43,27 @@
 ;; {<author> Yann LeCun}
 ;; states are the main objects used to store state
 ;; variables in or between modules.
+;; {<p> {<b> Example } }
+;; {<code>
+;; ; Create a new state object
+;; (defparameter my-idx3-state (new idx3-state 3 3 3))
+;; ; Fill it with some random data
+;; ; Note Slot access is how we get access to the matrix
+;; ; :object:slot
+;; (idx-bloop ((i :my-idx3-state:x)) 
+;;   (idx-bloop ((j i)) 
+;;     (idx-bloop ((k j)) (k (gauss 1))))) 
+;; ; Now lets save it
+;; (==> my-idx3-state save "my-idx3-state")
+;; ; Now lets load it into a new object
+;; (defparameter my-idx3-state/1 (new idx3-state 3 3 3))
+;; (==> my-idx3-state/1 load "my-idx3-state")
+;; ; Ohh we can also save as a text file so we can
+;; ; munge it with R
+;; (==> my-idx3-state save/text "my-idx3-state.txt")
+;; (read-lines "my-idx3-state.txt")
+;; </code>}
+
 (defclass gb-state object)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,11 +125,11 @@
   (let ((m (load-array s))) (array-copy m :this:x)))
 
 #? (==> <idx-state> save <s>
-;; save content of slot x into file <s>.
+;; save content of slot x into file <s> in binary format.
 (defmethod idx-state save (s) (save-array :this:x s))
 
 #? (==> <idx-state> save/text <s>
-;; save content of slot x into file <s>.
+;; save content of slot x into file <s> as plain text.
 (defmethod idx-state save/text (s) (save-array/text :this:x s))
 
 ;; dump no longer exists could use bwrite but slots
