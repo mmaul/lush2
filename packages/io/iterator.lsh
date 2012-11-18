@@ -74,7 +74,8 @@
     (declare (-gptr- "char *") buffer)
     (setq next-item (ubyte-array 0))
     (==> this -buffer-storage srg)
-    (while (and (= :reader:err 0) (not next-item-valid)) 
+    (while (and (= :reader:err 0) (not next-item-valid) 
+		(not (and (> cnt 0) (= blen 0) (= n 0)))) 
 	   (when (>= n blen)
 	     (setq n 0 ; n points to current buffer pos
 		   blen (==> reader read))
@@ -97,10 +98,14 @@
 		      (setq next-item-valid t))
 		    )
 	     ((>= blen n) (progn
-			   (setq next-item (idx1-ubyte-concat next-item item)))
+			    (setq next-item (idx1-ubyte-concat next-item item)))
 	      )
-	     (t (setq :reader:err 100))
+	     (t (progn
+		  (setq next-item (idx1-ubyte-concat next-item item))
+		  (setq :reader:err 100))
+		)
 	     )
+	   (incr cnt)
 	   )
     )
 ()
