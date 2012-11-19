@@ -1,5 +1,15 @@
 #? **** io: Input/Output Libraries
 
+Buffered Readers with specializations for Files and GZip compression
 #? *** << io/reader.lsh
 
+Iterator implementations for readers
 #? *** << io/iterator.lsh
+
+#? *** net
+Binding to OpenSSL
+#? ** << io/net/ssl.lsh
+
+UDP Client
+#? ** << io/net/udp.lsh
+
