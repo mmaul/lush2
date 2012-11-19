@@ -1,0 +1,98 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; io/net/ssl package for LUSH Lisp Universal Shell
+;;;   Copyright (C) 2012 Mike Maul
+;;;
+;;; This program is free software; you can redistribute it and/or modify
+;;; it under the terms of the GNU Lesser General Public License as 
+;;; published by the Free Software Foundation; either version 2.1 of the
+;;; License, or (at your option) any later version.
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU Lesser General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General Public
+;;; License along with this program; if not, write to the Free Software
+;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+;;; MA 02110-1301  USA
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#? ** UDPClient object
+;; Simple write only UDP client
+;; For an example of usage {<see> UDPSyslog }
+(defclass UDPClient object
+  ((-str-) ip )
+  ((-int-) port)
+  ((-int-) sock)
+  ((-int-) mtu)
+  ((-gptr- "struct sockaddr_in *") serveraddr)
+)
+
+#? * (new UDPClient <host> <port> <mtu>)
+;; Create UDP socket for <host>(-str-) <port>(-int-)
+;; <mtu>(-int). <mtu> is Maximum Transmit Unit or max number
+;; of  bytes that can bee sent.
+(demethod UDPClient UDPClient (ip_ port_ mtu_)
+  (declare (-str-) ip_ )
+  (declare (-int-) port_ mtu_)
+  (setq ip ip_ port port_ mtu mtu_)
+  #{
+     $serveraddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
+     memset($serveraddr, 0, sizeof($serveraddr)); 
+     /* Create the UDP socket */
+     if (($sock = socket(AF_INET,SOCK_DGRAM,0)) >= 0) {
+       $serveraddr->sin_family = AF_INET;
+       $serveraddr->sin_addr.s_addr = inet_addr($ip);
+       $serveraddr->sin_port = htons($port);
+     } 
+  #}
+  (when (< sock 0) (error "ERROR Socket Open"))
+  ()
+  )
+
+(defmethod UDPClient -destructor ()
+  #{ close($sock);
+     free($serveraddr); #}
+())
+
+#? (==> <UDPClient> close)
+;; Closes socket other wise socket is closed when 
+;; garbage collected
+(defmethod UDPClient close ()
+  #{ close($sock); #}
+  ())
+
+#? (==> <UDPClient> send <msg>)
+;; Sends <msg>(-str-) 
+(defmethod UDPClient send (msg)
+  (declare (-str-) msg)
+  (let ((mlen (length msg))
+	(ret 0))
+    (declare (-int-) mlen ret)
+    #{
+        $ret = sendto($sock, $msg, $mlen, 0,(struct sockaddr *) $serveraddr,
+                      sizeof(*$serveraddr));
+    #}
+    (when (< ret mlen) (error (sprintf "Mismatch is bytes sent:%d %d" ret mlen)))
+    ret
+    ))
+
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
+(dhc-make-with-libs "io_net_udp" ()
+  #{
+     #include <stdio.h>
+     #include <sys/socket.h>
+     #include <arpa/inet.h>
+     #include <stdlib.h>
+     #include <string.h>
+     #include <unistd.h>
+     #include <netinet/in.h>
+     #include <netinet/in.h>
+  #}
+  (UDPClient UDPClient -destructor send close)
+  
+))
