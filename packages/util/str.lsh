@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; io/readers package for LUSH Lisp Universal Shell
+;;; util/str package for LUSH Lisp Universal Shell
 ;;;   Copyright (C) 2012 Mike Maul
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,8 @@
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+#? *** String Utilities
+
 #? (str-reverse <s>)
 ;; Inplace reversal of string s
 (defun str-reverse (s)
@@ -34,6 +36,8 @@
   #}
   s)
 
+#? (string-to-idx1-ubyte <s>)
+;; Copies string <s> into an idx1 ubyte .
 (defun string-to-idx1-ubyte (s)
   (declare (-str-) s)
   (let ((ret (ubyte-array (length s))))
@@ -47,7 +51,9 @@
     #}
     ret))
 
-
+#? (idx1-ubyte-to-string <idx>)
+;; Copies contents of <idx>(-idx1- (-ubyte)) into
+;; a new (-str-)
 (defun idx1-ubyte-to-string (ind)
   (declare (-idx1- (-ubyte-)) ind)
   (let ((s ""))

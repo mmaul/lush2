@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; io/readers package for LUSH Lisp Universal Shell
+;;; util/array package for LUSH Lisp Universal Shell
 ;;;   Copyright (C) 2012 Mike Maul
 ;;;
 ;;; This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,11 @@
 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+#? *** Array Utilities
 
+#? (idx1-ubyte-concat <array1> <array2>)
+;; Extends <array1> inplace by the length of <array2>
+;; and appends <array2> to the end
 (defun idx1-ubyte-concat (a1 a2)
   (declare (-idx1- (-ubyte-)) a1 a2)
   (let* ((ol (length a1))
