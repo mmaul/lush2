@@ -168,6 +168,8 @@ Current packages include:
 
 #? *** << sys/sys.hlp
 
+#? *** << util/util.hlp
+
 #? *** << htmlib/htmlib.hlp
 
 #? *** << boost/math/distributions/dist.hlp

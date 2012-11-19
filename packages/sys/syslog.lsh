@@ -1,4 +1,26 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; sys/syslog package for LUSH Lisp Universal Shell
+;;;   Copyright (C) 2012 Mike Maul
+;;;
+;;; This program is free software; you can redistribute it and/or modify
+;;; it under the terms of the GNU Lesser General Public License as 
+;;; published by the Free Software Foundation; either version 2.1 of the
+;;; License, or (at your option) any later version.
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU Lesser General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General Public
+;;; License along with this program; if not, write to the Free Software
+;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+;;; MA 02110-1301  USA
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (libload "io/net/udp")
+
 #? *** Syslog
 ;; Example
 ;; {<pre>
@@ -6,7 +28,6 @@
 ;; (openlog "lush2"  (bitor (LOG_CONS) (bitor (LOG_PID) (LOG_NDELAY))) (LOG_LOCAL1))
 ;; (syslog (LOG_INFO) "Logging from lush!!!")
 ;; </pre>}
-
 (defmacro def-int-cval (d)
 `(defun ,d ()
   (let ((v 0))
@@ -99,6 +120,8 @@
 #? * (LOG_UPTO <level>)
 (def-int-callcfun/1 LOG_UPTO)
 
+#? ** Syslog Interface
+
 #? * (setlogmask <level>)
 (defun setlogmask (level)
   (declare (-int-) level)
@@ -124,10 +147,22 @@
   #{ closelog(); #}
   ())
 
+
+#? *** UDPSyslog
+;; UDP syslog client
+;; Example
+;; {<pre>
+;; (defparameter *logger* (new UDPSyslog "127.0.0.1" 513 (LOG_LOCAL1)))
+;; (==> *logger* syslog (LOG_WARN) "UDP Syslog test3")
+;; </pre>}
 (defclass UDPSyslog object
   ((-obj- (UDPClient)) udp-sock)
   ((-int-) facility))
 
+#? * (new UDPSyslog <host> <port> <facility>)
+;; Create new syslog handle, <host>(-str-) <port>(-int-)
+;; <facility> is one of t facilities specified for use
+;; with the syslog function above.
 (defmethod UDPSyslog UDPSyslog (host port facility_)
   (declare (-str-) host)
   (declare (-int-) port facility_)
@@ -139,14 +174,21 @@
   (==> udp-sock close)
   ())
 
+#? (==> <UDPSyslog> syslog <priority> <message>)
+;; Writes <message>(-str-) with <priority>(-int-) to network logger
+;; <priortiy> should be one of the priorities listed earlier for
+;; use with syslog function
 (defmethod UDPSyslog syslog (priority message)
   (declare (-int-) priority)
   (declare (-str-) message)
   (==> udp-sock send (sprintf "<%d> %s" (+ facility priority) message)))
 
+#? (==> <UDPSyslog> close)
+;; Closes logger
 (defmethod UDPSyslog close ()
   (==> udp-sock close)
   ())
+
 (let ((dhc-make-lushflags (concat dhc-make-lushflags " -I.")))      
 (dhc-make-with-libs "syslog" ()
 #{
@@ -154,7 +196,7 @@
 #}
 
   LOG_EMERG  LOG_CRIT LOG_WARNING LOG_NOTICE LOG_INFO LOG_DEBUG
-  LOG_UPTO LOG_CONS LOG_NDELAY LOG_NOWAIT LOG_ODELAY
+  LOG_UPTO LOG_CONS LOG_NDELAY LOG_NOWAIT LOG_ODELAY LOG_ERR
   LOG_PERROR LOG_PID LOG_AUTH LOG_AUTHPRIV LOG_CRON LOG_DAEMON
   LOG_FTP LOG_KERN LOG_LOCAL0 LOG_LOCAL1 LOG_LOCAL2 LOG_LOCAL3
   LOG_LOCAL4 LOG_LOCAL5 LOG_LOCAL6 LOG_LOCAL7 LOG_LPR LOG_MAIL

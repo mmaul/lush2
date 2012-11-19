@@ -24,7 +24,7 @@
 #? *** OpenSSL Bindings
 ;; Classes for reading of input
 
-(libload "io/net/ssl_config")
+(libload "io/net/ssl-config")
 (libload "io/reader")
 ;--------------------------------------------------
 
