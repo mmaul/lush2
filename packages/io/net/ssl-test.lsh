@@ -1,0 +1,12 @@
+;; Simple example of SSL usage
+;; Dumps https://www.verisign.com to the console
+;; line by line 
+(libload "io/iterator")
+(libload "io/net/ssl")
+
+(let* ((ssl (new SSL "www.verisign.com" 443)) ; Connect
+       (sr (new BIOReader ssl 1024))) ; Get reader
+  (==> ssl write "GET / HTTP/1.1\x0D\x0AHost: www.verisign.com\x0D\x0A\x43onnection: Close\x0D\x0A\x0D\x0A") ;send GET
+(do ((line (new LineReaderIterator sr))) ;Read response
+    (printf "SECURE:%s\n" (idx1-ubyte-to-string  line)))
+)

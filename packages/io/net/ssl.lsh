@@ -1,0 +1,265 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; io/net/ssl package for LUSH Lisp Universal Shell
+;;;   Copyright (C) 2012 Mike Maul
+;;;
+;;; This program is free software; you can redistribute it and/or modify
+;;; it under the terms of the GNU Lesser General Public License as 
+;;; published by the Free Software Foundation; either version 2.1 of the
+;;; License, or (at your option) any later version.
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU Lesser General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General Public
+;;; License along with this program; if not, write to the Free Software
+;;; Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+;;; MA 02110-1301  USA
+;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(libload "util/str")
+
+#? *** OpenSSL Bindings
+;; Classes for reading of input
+
+(libload "io/net/ssl_config")
+(libload "io/reader")
+;--------------------------------------------------
+
+#? ** BIO
+;; Wrapper for OpenSSL BIO connection objects
+;; Use this class to establish network connection
+;; and establish readeras and writers to communicate
+;; over the SSL conection. In most cases this serves
+;; as a base class for SSL
+;;
+;; This is currently a work in progress.
+;;
+;; <EXAMPLE>
+;; {<code>
+;; (libload "io/iterator")
+;; (libload "io/net/ssl")
+;;
+;; (let* ((bio (new BIO "www.google.com" 80)) ; Connect
+;;       (br (new BIOReader bio 1024))) ; Get reader
+;;  (==> br write "GET / HTTP/1.1\x0D\x0AHost: www.verisign.com\x0D\x0A\x43onnection: Close\x0D\x0A\x0D\x0A") ;send GET
+;; (do ((line (new LineReaderIterator br))) ;Read response
+;;    (printf "SECURE:%s\n" (idx1-ubyte-to-string  line)))
+;; )
+;; </code>}
+
+(defclass BIO object
+ ((-gptr- "BIO *") bio)
+ ((-str-) host)
+ ((-int-) port)
+)
+
+;#? * (new BufferReader <buffer size>)
+;;
+(defmethod BIO BIO (host_ port_)
+  (declare (-str-) host_)
+  (declare (-int-) port_)
+  (setq host host_ port port_)
+  (print "BIOOOOO")
+  (let ((constr (concat host ":" (str port))))
+    #{
+    long err;
+    char *err_c_s;
+    at *err_l_s;
+    ERR_load_BIO_strings();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+    $bio = BIO_new_connect($constr);
+    if($bio == NULL) {
+      err = ERR_get_error();
+      const char *msg = "Error creating BIO handle";
+      if(err){
+         err_l_s = make_string_of_length(120);
+         err_c_s = (unsigned char *)String(err_l_s);
+         ERR_error_string(err,err_c_s);
+         error("BIO",msg,err_l_s);
+      }else{
+        error("BIO",msg,NULL);
+      }
+    }
+    if(BIO_do_connect($bio) <= 0)
+    {
+       err = ERR_get_error();
+       const char *msg = "Error creating BIO handle";
+       if(err){
+         err_l_s = make_string_of_length(120);
+         err_c_s = (unsigned char *)String(err_l_s);
+         ERR_error_string(err,err_c_s);
+         error("BIO",msg,err_l_s);
+       }else{
+        error("BIO",msg,NULL);
+       }
+    }
+    #}
+  )
+  ()
+)
+
+(defmethod BIO write (s)
+  (declare (-str-) s)
+  (let ((slen (length s)))
+    (declare (-int-) slen)
+    #{ BIO_write($bio,$s,$slen);  #}
+    slen))
+
+#? (new BIO <host> <port>)
+;; Establishes BIO connection to <host> at <port> where port is an integer
+;; Rasies error if host cannot be contacted
+(defmethod BIO -destructor ()
+  #{ BIO_free_all($bio); #} 
+()
+)
+
+#? ** BIOReader BufferReader
+;; BufferReader implementation for OpenSSL BIO object
+;; Use for reading from SSL or BIO connections.
+(defclass BIOReader BufferReader
+  ((-obj- (BIO)) bio)
+)
+
+#? * (new BIOReader <BIO> <buffer_size>)
+;; Creates Buffer reader for <SSL> or <BIO> connections
+;; with <buffer_size>
+(defmethod BIOReader BIOReader (bio_ bsize_)
+  (declare (-obj- (BIO)) bio_)
+  (declare (-int-) bsize_)
+  (==> this BufferReader bsize_)
+  (setq bio bio_))
+
+#? (==> <BIOReader> read)
+;; Reads from connection returns the number 
+;; of bytes read
+(defmethod BIOReader read ()
+  (let ((bio :bio:bio))
+    #{ $blen = BIO_read($bio, $buffer, $bsize); #}
+    blen))
+
+#? ** SSL BIO
+;; Wrapper for OpenSSL SSL connection objects
+;; Use this class to establish SSL connection
+;; and establish readeras and writers to communicate
+;; over the SSL conection.
+;;
+;; This is currently a work in progress.
+;;
+;; <EXAMPLE>
+;; {<code>
+;; (libload "io/iterator")
+;; (libload "io/net/ssl")
+;;
+;; (let* ((ssl (new SSL "www.verisign.com" 443)) ; Connect
+;;       (sr (new BIOReader ssl 1024))) ; Get reader
+;;  (==> ssl write "GET / HTTP/1.1\x0D\x0AHost: www.verisign.com\x0D\x0A\x43onnection: Close\x0D\x0A\x0D\x0A") ;send GET
+;; (do ((line (new LineReaderIterator sr))) ;Read response
+;;    (printf "SECURE:%s\n" (idx1-ubyte-to-string  line)))
+;; )
+;; </code>}
+(defclass SSL BIO
+  ((-gptr- "SSL_CTX *") ctx)
+  ((-gptr- "SSL *") ssl)
+  ((-str-) cacert_file)
+)
+
+#? (new SSL <host> <port>)
+;; Establishes SSL connection to <host> at <port> where port is an integer
+;; Rasies error if host cannot be contacted
+(defmethod SSL SSL (host_ port_)
+  (setq cacert_file "/etc/ssl/certs/Verisign_Class_1_Public_Primary_Certification_Authority.pem")
+  (declare (-str-) host_)
+  (declare (-int-) port_)
+  (setq host host_ port port_)
+  (let ((constr (concat host ":" (str port))))
+   (declare (-str-) constr)
+    #{
+    SSL_library_init() ;
+    BIO /* *sbio, */ *out;
+    SSL_CTX *ctx;
+    SSL *ssl;
+    ERR_load_crypto_strings();
+    ERR_load_SSL_strings();
+    OpenSSL_add_all_algorithms();
+    long err;
+    char *err_c_s;
+    at *err_l_s;
+    /* We would seed the PRNG here if the platform didn't
+    * do it automatically
+    */
+    $ctx = SSL_CTX_new(SSLv23_client_method());
+    /* We'd normally set some stuff like the verify paths and
+    * mode here because as things stand this will connect to
+    * any server whose certificate is signed by any CA.
+    */
+    $bio = BIO_new_ssl_connect($ctx);
+    BIO_get_ssl($bio, &ssl);
+    if(!ssl) {
+      err = ERR_get_error();
+      const char *msg = "Error establishing SSL connection";
+      if(err){
+         err_l_s = make_string_of_length(120);
+         err_c_s = (unsigned char *)String(err_l_s);
+         ERR_error_string(err,err_c_s);
+         error("SSL",msg,err_l_s);
+      }else{
+        error("SSL",msg,NULL);
+      }
+    } else {
+      $ssl = ssl;
+    }
+    /* Don't want any retries */
+    SSL_set_mode(ssl, SSL_MODE_AUTO_RETRY);
+    /* We might want to do other things with ssl here */
+    BIO_set_conn_hostname($bio, $constr);
+    if(BIO_do_connect($bio) <= 0) {
+      err = ERR_get_error();
+      const char *msg = "Error connecting to server";
+      if(err){
+         err_l_s = make_string_of_length(120);
+         err_c_s = (unsigned char *)String(err_l_s);
+         ERR_error_string(err,err_c_s);
+         error("SSL",msg,err_l_s);
+      }else{
+        error("SSL",msg,NULL);
+      }
+     }
+
+     if(BIO_do_handshake($bio) <= 0) {
+      err = ERR_get_error();
+      const char *msg = "Error establishing handshake";
+      if(err){
+         err_l_s = make_string_of_length(120);
+         err_c_s = (unsigned char *)String(err_l_s);
+         ERR_error_string(err,err_c_s);
+         error("SSL",msg,err_l_s);
+      }else{
+        error("SSL",msg,NULL);
+      }
+     }
+ 
+    #}
+    ()
+  )
+)
+
+(defmethod SSL -destructor ()
+()
+)
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I.")))      
+(dhc-make-with-c++ "bio" (list ssl crypto)
+#{
+#include "openssl/ssl.h"
+#include "openssl/bio.h"
+#include "openssl/err.h"
+#}  
+ (BIO BIO -destructor write)
+ (BIOReader BIOReader read)
+ (SSL SSL -destructor)
+
+))

@@ -1,0 +1,10 @@
+(defvar ssl
+ (let ((lib (find-shared-or-static-library "libssl")))
+    (if (and lib (filep lib))
+   lib
+       (error "unable to find libssl"))))
+(defvar crypto 
+ (let ((lib (find-shared-or-static-library "libcrypto")))
+    (if (and lib (filep lib))
+   lib
+       (error "unable to find libcrypto"))))
