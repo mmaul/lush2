@@ -452,7 +452,11 @@
   (declare (-int-) row)
   (let ((ret ""))
     (declare (-str-) ret)
-    #{ $ret=PQgetvalue($pgresult,$row,$col); #}
+    #{ char *ret=PQgetvalue($pgresult,$row,$col); 
+       $ret=(unsigned char *)String(make_string_of_length(strlen(ret)));
+       strcpy($ret,ret);
+    #}
+
     ret))   
 
 #? (getisnull <pgresult> <row> <col>)
@@ -711,13 +715,85 @@
   ())
 )
 
+#? *** High Level Interface
+
+(defclass PgSQL object
+  ((-gptr- "PGconn *") db)
+  ((-obj- (PgSQLResult)) result))
+
+#? * (new PgSQL <connection-string>)
+;; Connect to PgSQL database with supplied <connection-string>
+;; raises error if unsuccessful
+(defmethod PgSQL PgSQL (connection-string)
+  (declare (-str-) connection-string)
+  (setq db (pgsql-connectdb connection-string))
+  (assert (and (not (pgsql-is-null db)) 
+	       (= (pgsql-status db) (pgsql-CONNECTION_OK)))
+	  "Error connecting to DB")
+())
+
+(defmethod PgSQL -destructor ()
+	   (pgsql-finish db)
+())
+  
+#? (==> <PgSQL> query <query-string>)
+;; Executes query string  and return <PgSQLResult> object
+(defmethod PgSQL query (query)
+  (declare (-str-) query)
+  (new PgSQLResult (pgsql-exec db query)))
+
+
+#? ** PgSQLResult iterator
+;; Object containing query which implement iteratable interface
+;; Example
+;; {<code>
+;;  (let* (
+;;    (db (new PgSQL "host=127.0.0.1 port=5432 dbname=scratch user=dbuser password=dbuser"))
+;;	 (result (==> db query "select * from movie")))
+;;    (do ((i result))  (print i)))
+;; </code>} 
+(defclass PgSQLResult iterator
+  ((-gptr- "PGresult *") result)
+  ((-int-) row)
+  ((-list- (-str-)) next-item))
+
+#? * (new PgSQLResult <result>)
+;; Constructor is normaly not called directly
+;; (==> db query <query-str>) return a RgSQLResult object.
+;; However a result from the low level interface can be used
+;; with this constructor
+(defmethod PgSQLResult PgSQLResult (result)
+  (declare (-gptr- "PGresult *") result)
+  (setq :this:result result)
+  (setq :this:row 0)
+())
+
+(defmethod PgSQLResult -destructor ()
+  (pgsql-clear result)
+())
+
+(defmethod PgSQLResult -make-next ()
+  (setq next-item-valid (if (and
+       (= (pgsql-result-status result) (pgsql-PGRES_TUPLES_OK))
+       (< row (pgsql-ntuples result)))
+       (progn 
+         (for (j (- (pgsql-nfields result) 1) 0 -1)
+	   (setq next-item (cons (pgsql-getvalue result row j) :this:next-item)))
+         (incr row)
+	 t)
+      ()))
+  ())
+
+;; (==> <PgSQLResult> ok?)
+;; If result is sucessfult return t
+(defmethod PgSQLResult ok? ()
+	   (= (pgsql-result-status result) (pgsql-PGRES_TUPLES_OK)))
+
+(defun test-pgsql ()
+)
+
+
 (defvar pgsqlfunclist '("is-null" "connectdb"))
-;;(with-namespace lush1-
-;;(let ((dhc-make-lushflags (concat dhc-make-lushflags pgsql-cflags)))
-;;  (dhc-make-all ()
-;;                (mapcar named pgsqlfunclist)
-;;                (list pgsql-libpq) ) )
-;)
 
 (dhc-make-with-libs () ;;"pgsql"
                     (list pgsql-libpq)
@@ -784,5 +860,6 @@
 		    pgsql-escapeByteaConn
 		    pgsql-unescapeBytea
 		    pgsql-freemem
+
 )
  
