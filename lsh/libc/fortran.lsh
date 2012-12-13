@@ -72,6 +72,7 @@
     ;; Locate libgcc
     (reading (concat "| " (getconf "CC") " --print-file-name=libgcc.a")
       (setq libgcc (read-string)) )
+
     (when (filep libgcc)
       ;; Search shared lib in libgcc path
       ;; Note: libg77 is a wild guess for future versions of g77
@@ -79,6 +80,8 @@
         (setq libg77 (or (find-shared-library "libgfortran")
                          (find-shared-library "libg77")
                          (find-shared-library "libg2c") ) ) )
+      (when (not libg77)
+	(setq libg77 (find-shared-library "libgfortran")))
       ;; Decide g77 support library name
       (when (not libg77)
         (cond
