@@ -587,7 +587,7 @@ mode.
   of the specified class. Class membership is checked at run time.}
 }
 
-
+#? * <<libc/cstruct.lsh
 
 #? ** Inline C Code
 CLush allows to freely intermix Lisp and C code within
