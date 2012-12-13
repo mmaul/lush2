@@ -28,6 +28,13 @@
 (libload "blas/mat")  ;; below are help texts for functions imported from blas/mat
 (libload "lapack")
 
+;; mat-tranpose compiliation is problematic, alternatative
+ (defun idx2-transpose (a) 
+   (declare (-idx2- (-double-)) a) 
+   (let ((b (double-array (idx-shape a 0) (idx-shape a 1)))) 
+     (array-copy a b) 
+     (array-transpose b '(1 0))))
+
 ;; make explicit matrices L and U from result of lapack-getrf
 (defun -mk-lu (A q)
   (declare (-idx2- (-double-)) A)
@@ -36,7 +43,7 @@
         (n (shape A 1)) )
     (declare (-int-) m n)
     (if (< m n)
-        (let ((L (mat-id m)))
+        (let ((L (mat-eye m)))
           (let ((lrow (idx-trim* L 1 0))
                 (arow (idx-trim* A 1 0)) )
             (for* (i 1 m)
@@ -99,7 +106,7 @@
   (declare (-idx1- (-double-)) c)
   (let* ((m  (length A))
          (A2 (blas-gemm 1 A A))
-         (Ai (mat-id m))
+         (Ai (mat-eye m))
          (A+ (clone-array Ai))
          (U  (double-array m m))
          (V  (double-array m m)) )
@@ -211,7 +218,7 @@
   `(let* ((A ,A)
 	  (result (double-array 2 (length A))) )
      (array-copy (lapack-geev/n! ##A ($*0 result 1)) ($*0 result 0))
-     ($t result))
+     (idx2-transpose result))
   )
 
 #? (mat-eigvals/symm <A>)
@@ -291,7 +298,7 @@
   (declare (-idx2- (-double-)) A)
   (when (not (squarep A))
     (error "matrix not square") )
-  (lapack-gesv A (mat-id (length A))) )
+  (lapack-gesv A (mat-eye (length A))) )
   
 
 #? (mat-norm <A>)
@@ -306,9 +313,11 @@
 ;; Largest absolute column sum of <A> (1-norm).
 (defun norm/1 (A)
   (declare (-idx2- (-double-)) A)
-  (let ((maxc 0))
-    (idx-bloop ((c ($t A)))
-      (setq maxc (max maxc (blas-asum c))) )
+  (let ((maxc 0)
+	(tx (idx2-transpose A))) 
+    (idx-bloop ((c tx))
+      (setq maxc (max maxc (blas-asum c))) 
+      )
     maxc))
 
 #? (mat-norm/inf <A>)
@@ -400,7 +409,7 @@
     (idx-trim! Vt 0 0 (min m n))
     (idx-trim! U 1 0 (min m n))
     (blas-gemm! 1 U Vt 0 CA)
-    ($t CA) ))
+    (idx2-transpose CA) ))
       
 #? (mat-power <A> <n>)
 ;; <n>th power of matrix <A>.
@@ -584,6 +593,7 @@
 ) ; in-namespace mat-
 
 (dhc-make "lapack_mat"
+	  idx2-transpose
           -mk-lu
           -cp-ut
           mat-band
