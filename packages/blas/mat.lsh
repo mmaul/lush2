@@ -52,15 +52,18 @@
         (idx-trim! W 0 1) (idx-trim! W 1 1) ))
     ()))
 
+
+
 ;; Create square Q from W.
 (defun -W2Q (W)
   (declare (-idx2- (-double-)) W)
-  (let ((Q (mat-id (length W))))
+  (let ((Q (mat-eye (length W))))
     (for* (k 0 (idx-shape W 1))
       (declare (-int-) k)
       (let* ((v (idx-select W 1 k))
              (u (gemv 1 Q v)) )
-        (ger1! -2 u v Q) ))
+        (ger1! -2 u v Q) )
+      )
     Q))
 
 ;; Compute Q times b with implicit representation of Q (W).
@@ -172,6 +175,16 @@
   `(mat-solve! (copy-array ,A) (copy-array ,b))
   )
 
+;; replacement for non-compilable call to mat-diag
+(defun eye (n)
+  (declare (-int-) n)
+  (let* ((m (double-array n n)))
+    (for* (i 0 n)
+	  (m i i 1) )
+    m)
+)
+
+
 #? (mat-power <A> <n>)
 ;; <n>th power of matrix <A>.
 ;;
@@ -186,7 +199,7 @@
    ((< i 0)
     (error "negative exponent") )
    ((= i 0)
-    (id (length A)) )
+    (eye (length A)) )
    ((= i 1)
     (copy-array A) )
    (t
@@ -208,6 +221,7 @@
 ) ; in-namespace* blas
 
 (dhc-make "blas_mat"
+	  mat-eye
           -house!
           -W2Q
           -implicit-Q.b!
