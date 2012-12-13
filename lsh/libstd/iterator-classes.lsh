@@ -310,9 +310,9 @@
         $ni->dim[0] = n;
         $valid = (nmax>0);
       #} )
-    (if valid
-        (printf "next item valid\n")
-      (printf "next item not valid\n") )
+    ;(if valid
+     ;   (printf "next item valid\n")
+     ; (printf "next item not valid\n") )
     (setq next-item-valid valid)
     )
   ())
