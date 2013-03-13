@@ -1,0 +1,103 @@
+;;-------------------------
+(defvar lz
+  (let ((lib (find-shared-or-static-library "/usr/lib64/libz.so")))
+    (if (and lib (filep lib));
+        lib
+        (error "unable to find libz"))))
+
+(defclass Gz object
+  ((-int-) fh)
+  ((-int-) bsize)
+  ((-gptr- "char *") buffer)
+  ((-int-) err)
+  ((-gptr- "gzFile") gzfile))
+
+#? * (new Gz file)
+
+; Decompresses gzip'd data in file
+(demethod Gz Gz (file)
+  (declare (-str-) file)
+  (setq err 0)
+  (setq bsize 2048)
+  (declare (-int-) err) 
+  #{ 
+     int fh = open($file,O_RDONLY);
+//printf("%s : %d\n",$file,fh);
+     if ($fh >-1) {
+       $gzfile = gzdopen(fh,"r");
+     } else {
+       $gzfile = NULL;
+       $err = 1;
+     }
+   #}
+   ()
+ )
+
+;;(demethod Gz gzbuffer (gzbuffersz)
+;;  (declare (-int-) gzbuffersz)
+;;  (to-int #{ gzbuffer($gzfile, $gzbuffersz) #})
+;;)
+
+(demethod Gz -destructor ()
+  #{ gzclose($gzfile);
+  #}
+  ()
+)
+
+;#? * (==> to-string)
+(demethod Gz to-string ()
+  (let ((to ""))
+    (declare (-str-) to)
+    #{ 
+    int blen = strlen(const_cast<const char*>($buffer));
+    $to = (unsigned char *)String(make_string_of_length(blen));
+    strcpy($to,$buffer);
+    #}
+    to))
+
+(demethod Gz eof ()
+  (to-bool #{(gzeof($gzfile) > 0)#}))
+#? * (==> readln <Gz>)
+;; Returns number decompressed or 0 one End of Stream
+;; Decompressed data can be accessed in <buffer> slot
+(demethod Gz readln ()
+    #{ $buffer = (char *)malloc(sizeof(char)*$bsize+1); 
+       char *r = gzgets($gzfile,$buffer,$bsize);
+//printf("%s",r);
+       if(r == NULL) {$err=1;}
+    #}
+    (if (= err 0)
+      (==> this to-string)
+      "")
+  )
+
+(defclass GzIterator iterator
+ ((-obj- (Gz)) gz)
+ ((-str-) next-item)
+)
+
+(demethod GzIterator GzIterator (file)
+  (declare (-str-) file)
+  (setq gz (new Gz file)))
+
+;;(demethod GzIterator gzbuffer (gzbuffersz)
+;;  (declare (-int-) gzbuffersz)
+;;  (==> gz gzbuffer gzbuffersz))
+
+(defmethod GzIterator -make-next ()
+  (if (and (not (==> gz eof)) (= :gz:err 0))
+    (progn (setq next-item-valid t)
+           (setq next-item (==> gz readln)))
+    (setq next-item-valid ()))
+())
+
+(let ((dhc-make-lushflags (concat dhc-make-lushflags " -fpermissive -I."))) 
+(dhc-make-with-c++ "GzLIB" (list  lz)
+#{
+ #include "zlib.h"  
+ #include "zconf.h"  
+ #include <fcntl.h>
+#}  
+ (Gz Gz -destructor to-string readln eof )
+ (GzIterator GzIterator  -make-next )
+))
